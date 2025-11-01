@@ -1,425 +1,344 @@
 const { Consulta, Paciente, Medico } = require('../models');
 const { Op } = require('sequelize');
 
+// Função para gerar protocolo único
+const gerarProtocolo = () => {
+  const timestamp = Date.now();
+  const random = Math.floor(Math.random() * 1000);
+  return `CONS-${timestamp}-${random}`;
+};
+
+// Função para gerar horários disponíveis
+const gerarHorariosDisponiveis = () => {
+  const horarios = [];
+  for (let hora = 8; hora <= 17; hora++) {
+    horarios.push(`${hora.toString().padStart(2, '0')}:00`);
+    if (hora < 17) {
+      horarios.push(`${hora.toString().padStart(2, '0')}:30`);
+    }
+  }
+  return horarios;
+};
+
 const consultaController = {
-  // Listar todas as consultas
+  // Listar consultas do paciente autenticado
   listarConsultas: async (req, res) => {
     try {
-      const { 
-        page = 1, 
-        limit = 10, 
-        id_paciente, 
-        id_medico, 
-        data_inicio, 
-        data_fim,
-        status 
-      } = req.query;
+      const pacienteId = req.user.id;
       
-      const offset = (page - 1) * limit;
-      
-      // Construir filtros
-      const where = {};
-      
-      if (id_paciente) {
-        where.id_paciente = id_paciente;
-      }
-      
-      if (id_medico) {
-        where.id_medico = id_medico;
-      }
-      
-      if (status) {
-        where.status = status;
-      }
-      
-      if (data_inicio && data_fim) {
-        where.data_consulta = {
-          [Op.between]: [new Date(data_inicio), new Date(data_fim)]
-        };
-      } else if (data_inicio) {
-        where.data_consulta = {
-          [Op.gte]: new Date(data_inicio)
-        };
-      } else if (data_fim) {
-        where.data_consulta = {
-          [Op.lte]: new Date(data_fim)
-        };
-      }
-      
-      // Buscar consultas com paginação e filtros
-      const { count, rows: consultas } = await Consulta.findAndCountAll({
-        where,
-        limit: parseInt(limit),
-        offset: parseInt(offset),
+      const consultas = await Consulta.findAll({
+        where: { id_paciente: pacienteId },
         order: [['data_consulta', 'DESC']],
         include: [
-          { model: Paciente, attributes: ['id_paciente', 'nome', 'cpf'] },
-          { model: Medico, attributes: ['id_medico', 'nome', 'crm', 'especialidade'] }
+          { 
+            model: Medico, 
+            attributes: ['id_medico', 'nome', 'crm', 'especialidade'] 
+          }
         ]
       });
 
-      return res.status(200).json({
-        status: 'success',
-        message: 'Consultas listadas com sucesso',
-        data: {
-          consultas,
-          total: count,
-          page: parseInt(page),
-          limit: parseInt(limit),
-          pages: Math.ceil(count / limit)
-        }
-      });
+      return res.status(200).json(consultas);
     } catch (error) {
       console.error('Erro ao listar consultas:', error);
       return res.status(500).json({
-        status: 'error',
-        message: 'Erro ao listar consultas',
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        error: 'Erro ao listar consultas',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   },
 
-  // Obter uma consulta pelo ID
-  obterConsulta: async (req, res) => {
+  // Buscar consulta por ID
+  buscarConsulta: async (req, res) => {
     try {
       const { id } = req.params;
+      const pacienteId = req.user.id;
       
-      const consulta = await Consulta.findByPk(id, {
+      const consulta = await Consulta.findOne({
+        where: { 
+          id_consulta: id,
+          id_paciente: pacienteId 
+        },
         include: [
           { model: Paciente, attributes: ['id_paciente', 'nome', 'cpf'] },
           { model: Medico, attributes: ['id_medico', 'nome', 'crm', 'especialidade'] }
         ]
       });
-      
+
       if (!consulta) {
         return res.status(404).json({
-          status: 'error',
-          message: 'Consulta não encontrada'
+          error: 'Consulta não encontrada'
         });
       }
 
-      return res.status(200).json({
-        status: 'success',
-        message: 'Consulta encontrada com sucesso',
-        data: consulta
-      });
+      return res.status(200).json(consulta);
     } catch (error) {
-      console.error('Erro ao obter consulta:', error);
+      console.error('Erro ao buscar consulta:', error);
       return res.status(500).json({
-        status: 'error',
-        message: 'Erro ao obter consulta',
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        error: 'Erro ao buscar consulta',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   },
 
-  // Criar uma nova consulta
-  criarConsulta: async (req, res) => {
+  // Agendar nova consulta (UC01)
+  agendarConsulta: async (req, res) => {
     try {
-      const { id_paciente, id_medico, data_consulta, status, motivo } = req.body;
-      
-      // Validar dados obrigatórios
-      if (!id_paciente || !id_medico || !data_consulta) {
-        return res.status(400).json({
-          status: 'error',
-          message: 'Dados obrigatórios não fornecidos'
-        });
-      }
+      const pacienteId = req.user.id;
+      const { 
+        medico_id, 
+        data, 
+        horario, 
+        tipo, 
+        especialidade, 
+        unidade, 
+        observacoes 
+      } = req.body;
 
-      // Verificar se o paciente existe
-      const paciente = await Paciente.findByPk(id_paciente);
-      if (!paciente) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'Paciente não encontrado'
+      // Validar campos obrigatórios
+      if (!medico_id || !data || !horario || !tipo || !especialidade || !unidade) {
+        return res.status(400).json({
+          error: 'Todos os campos obrigatórios devem ser preenchidos'
         });
       }
 
       // Verificar se o médico existe
-      const medico = await Medico.findByPk(id_medico);
+      const medico = await Medico.findByPk(medico_id);
       if (!medico) {
         return res.status(404).json({
-          status: 'error',
-          message: 'Médico não encontrado'
+          error: 'Médico não encontrado'
         });
       }
 
-      // Verificar se já existe uma consulta para o mesmo médico no mesmo horário
+      // Verificar se já existe consulta para o mesmo médico, data e horário
       const consultaExistente = await Consulta.findOne({
         where: {
-          id_medico,
-          data_consulta: new Date(data_consulta),
+          id_medico: medico_id,
+          data_consulta: data,
+          horario: horario,
           status: {
-            [Op.ne]: 'Cancelada'
+            [Op.in]: ['agendada', 'confirmada']
           }
         }
       });
 
       if (consultaExistente) {
         return res.status(409).json({
-          status: 'error',
-          message: 'Já existe uma consulta agendada para este médico neste horário'
+          error: 'Este horário já está ocupado. Por favor, escolha outro horário.'
         });
       }
 
-      // Criar a consulta
+      // Gerar protocolo único
+      const protocolo = gerarProtocolo();
+
+      // Criar nova consulta
       const novaConsulta = await Consulta.create({
-        id_paciente,
-        id_medico,
-        data_consulta,
-        status: status || 'Agendada',
-        motivo
+        id_paciente: pacienteId,
+        id_medico: medico_id,
+        data_consulta: data,
+        horario,
+        tipo,
+        especialidade,
+        unidade,
+        observacoes,
+        status: 'agendada',
+        protocolo
       });
 
-      // Buscar a consulta com os dados relacionados
-      const consultaCompleta = await Consulta.findByPk(novaConsulta.id_consulta, {
+      // Buscar consulta criada com relacionamentos
+      const consultaCriada = await Consulta.findByPk(novaConsulta.id_consulta, {
         include: [
-          { model: Paciente, attributes: ['id_paciente', 'nome', 'cpf'] },
-          { model: Medico, attributes: ['id_medico', 'nome', 'crm', 'especialidade'] }
+          { model: Medico, attributes: ['id_medico', 'nome', 'especialidade'] }
         ]
       });
 
       return res.status(201).json({
-        status: 'success',
-        message: 'Consulta criada com sucesso',
-        data: consultaCompleta
+        message: 'Consulta agendada com sucesso!',
+        consulta: consultaCriada
       });
     } catch (error) {
-      console.error('Erro ao criar consulta:', error);
+      console.error('Erro ao agendar consulta:', error);
       return res.status(500).json({
-        status: 'error',
-        message: 'Erro ao criar consulta',
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        error: 'Erro ao agendar consulta',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   },
 
-  // Atualizar uma consulta existente
+  // Atualizar consulta
   atualizarConsulta: async (req, res) => {
     try {
       const { id } = req.params;
-      const { id_paciente, id_medico, data_consulta, status, motivo } = req.body;
-      
-      // Validar dados obrigatórios
-      if (!id_paciente || !id_medico || !data_consulta || !status) {
+      const pacienteId = req.user.id;
+      const dados = req.body;
+
+      const consulta = await Consulta.findOne({
+        where: { 
+          id_consulta: id,
+          id_paciente: pacienteId 
+        }
+      });
+
+      if (!consulta) {
+        return res.status(404).json({
+          error: 'Consulta não encontrada'
+        });
+      }
+
+      // Não permitir atualização de consultas já realizadas ou canceladas
+      if (consulta.status === 'realizada' || consulta.status === 'cancelada') {
         return res.status(400).json({
-          status: 'error',
-          message: 'Dados obrigatórios não fornecidos'
+          error: 'Não é possível atualizar consultas realizadas ou canceladas'
         });
       }
 
-      // Verificar se a consulta existe
-      const consulta = await Consulta.findByPk(id);
-      if (!consulta) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'Consulta não encontrada'
-        });
-      }
+      await consulta.update(dados);
 
-      // Verificar se o paciente existe
-      const paciente = await Paciente.findByPk(id_paciente);
-      if (!paciente) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'Paciente não encontrado'
-        });
-      }
-
-      // Verificar se o médico existe
-      const medico = await Medico.findByPk(id_medico);
-      if (!medico) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'Médico não encontrado'
-        });
-      }
-
-      // Verificar se já existe outra consulta para o mesmo médico no mesmo horário
-      if (id_medico !== consulta.id_medico || 
-          new Date(data_consulta).getTime() !== new Date(consulta.data_consulta).getTime()) {
-        
-        const consultaExistente = await Consulta.findOne({
-          where: {
-            id_consulta: { [Op.ne]: id },
-            id_medico,
-            data_consulta: new Date(data_consulta),
-            status: {
-              [Op.ne]: 'Cancelada'
-            }
-          }
-        });
-
-        if (consultaExistente) {
-          return res.status(409).json({
-            status: 'error',
-            message: 'Já existe uma consulta agendada para este médico neste horário'
-          });
-        }
-      }
-
-      // Atualizar a consulta
-      await consulta.update({
-        id_paciente,
-        id_medico,
-        data_consulta,
-        status,
-        motivo
-      });
-
-      // Buscar a consulta atualizada com os dados relacionados
       const consultaAtualizada = await Consulta.findByPk(id, {
         include: [
-          { model: Paciente, attributes: ['id_paciente', 'nome', 'cpf'] },
-          { model: Medico, attributes: ['id_medico', 'nome', 'crm', 'especialidade'] }
+          { model: Medico, attributes: ['id_medico', 'nome', 'especialidade'] }
         ]
       });
 
       return res.status(200).json({
-        status: 'success',
         message: 'Consulta atualizada com sucesso',
-        data: consultaAtualizada
+        consulta: consultaAtualizada
       });
     } catch (error) {
       console.error('Erro ao atualizar consulta:', error);
       return res.status(500).json({
-        status: 'error',
-        message: 'Erro ao atualizar consulta',
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        error: 'Erro ao atualizar consulta',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   },
 
-  // Atualizar parcialmente uma consulta
-  atualizarParcialConsulta: async (req, res) => {
+  // Cancelar consulta
+  cancelarConsulta: async (req, res) => {
     try {
       const { id } = req.params;
-      const dadosAtualizacao = req.body;
-      
-      // Verificar se a consulta existe
-      const consulta = await Consulta.findByPk(id);
+      const pacienteId = req.user.id;
+
+      const consulta = await Consulta.findOne({
+        where: { 
+          id_consulta: id,
+          id_paciente: pacienteId 
+        }
+      });
+
       if (!consulta) {
         return res.status(404).json({
-          status: 'error',
-          message: 'Consulta não encontrada'
+          error: 'Consulta não encontrada'
         });
       }
 
-      // Verificar se está alterando o médico ou a data
-      if ((dadosAtualizacao.id_medico && dadosAtualizacao.id_medico !== consulta.id_medico) ||
-          (dadosAtualizacao.data_consulta && 
-           new Date(dadosAtualizacao.data_consulta).getTime() !== new Date(consulta.data_consulta).getTime())) {
-        
-        // Verificar se o médico existe
-        if (dadosAtualizacao.id_medico) {
-          const medico = await Medico.findByPk(dadosAtualizacao.id_medico);
-          if (!medico) {
-            return res.status(404).json({
-              status: 'error',
-              message: 'Médico não encontrado'
-            });
-          }
-        }
-        
-        // Verificar se já existe outra consulta para o mesmo médico no mesmo horário
-        const consultaExistente = await Consulta.findOne({
-          where: {
-            id_consulta: { [Op.ne]: id },
-            id_medico: dadosAtualizacao.id_medico || consulta.id_medico,
-            data_consulta: dadosAtualizacao.data_consulta 
-              ? new Date(dadosAtualizacao.data_consulta) 
-              : consulta.data_consulta,
-            status: {
-              [Op.ne]: 'Cancelada'
-            }
-          }
+      // Verificar se a consulta pode ser cancelada
+      if (consulta.status === 'realizada') {
+        return res.status(400).json({
+          error: 'Não é possível cancelar uma consulta já realizada'
         });
-
-        if (consultaExistente) {
-          return res.status(409).json({
-            status: 'error',
-            message: 'Já existe uma consulta agendada para este médico neste horário'
-          });
-        }
       }
 
-      // Verificar se está alterando o paciente
-      if (dadosAtualizacao.id_paciente && dadosAtualizacao.id_paciente !== consulta.id_paciente) {
-        const paciente = await Paciente.findByPk(dadosAtualizacao.id_paciente);
-        if (!paciente) {
-          return res.status(404).json({
-            status: 'error',
-            message: 'Paciente não encontrado'
-          });
-        }
+      if (consulta.status === 'cancelada') {
+        return res.status(400).json({
+          error: 'Esta consulta já está cancelada'
+        });
       }
 
-      // Atualizar a consulta
-      await consulta.update(dadosAtualizacao);
+      // Verificar se a consulta é hoje ou no passado
+      const dataConsulta = new Date(consulta.data_consulta);
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
 
-      // Buscar a consulta atualizada com os dados relacionados
-      const consultaAtualizada = await Consulta.findByPk(id, {
+      if (dataConsulta < hoje) {
+        return res.status(400).json({
+          error: 'Não é possível cancelar consultas passadas'
+        });
+      }
+
+      await consulta.update({ status: 'cancelada' });
+
+      return res.status(200).json({
+        message: 'Consulta cancelada com sucesso'
+      });
+    } catch (error) {
+      console.error('Erro ao cancelar consulta:', error);
+      return res.status(500).json({
+        error: 'Erro ao cancelar consulta',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  },
+
+  // Listar consultas por status
+  listarPorStatus: async (req, res) => {
+    try {
+      const { status } = req.params;
+      const pacienteId = req.user.id;
+
+      const consultas = await Consulta.findAll({
+        where: { 
+          id_paciente: pacienteId,
+          status: status
+        },
+        order: [['data_consulta', 'DESC']],
         include: [
-          { model: Paciente, attributes: ['id_paciente', 'nome', 'cpf'] },
-          { model: Medico, attributes: ['id_medico', 'nome', 'crm', 'especialidade'] }
+          { model: Medico, attributes: ['id_medico', 'nome', 'especialidade'] }
         ]
       });
 
-      return res.status(200).json({
-        status: 'success',
-        message: 'Consulta atualizada com sucesso',
-        data: consultaAtualizada
-      });
+      return res.status(200).json(consultas);
     } catch (error) {
-      console.error('Erro ao atualizar consulta:', error);
+      console.error('Erro ao listar consultas por status:', error);
       return res.status(500).json({
-        status: 'error',
-        message: 'Erro ao atualizar consulta',
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        error: 'Erro ao listar consultas',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   },
 
-  // Excluir uma consulta
-  excluirConsulta: async (req, res) => {
+  // Listar horários disponíveis para um médico em uma data
+  listarHorariosDisponiveis: async (req, res) => {
     try {
-      const { id } = req.params;
-      
-      // Verificar se a consulta existe
-      const consulta = await Consulta.findByPk(id);
-      if (!consulta) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'Consulta não encontrada'
+      const { medicoId, data } = req.query;
+
+      if (!medicoId || !data) {
+        return res.status(400).json({
+          error: 'Médico e data são obrigatórios'
         });
       }
 
-      // Excluir a consulta
-      await consulta.destroy();
-
-      return res.status(200).json({
-        status: 'success',
-        message: 'Consulta excluída com sucesso'
+      // Buscar consultas agendadas para o médico nesta data
+      const consultasAgendadas = await Consulta.findAll({
+        where: {
+          id_medico: medicoId,
+          data_consulta: data,
+          status: {
+            [Op.in]: ['agendada', 'confirmada']
+          }
+        },
+        attributes: ['horario']
       });
+
+      // Obter horários já ocupados
+      const horariosOcupados = consultasAgendadas.map(c => c.horario);
+
+      // Gerar todos os horários possíveis
+      const todosHorarios = gerarHorariosDisponiveis();
+
+      // Filtrar horários disponíveis
+      const horariosDisponiveis = todosHorarios.filter(
+        horario => !horariosOcupados.includes(horario)
+      );
+
+      return res.status(200).json(horariosDisponiveis);
     } catch (error) {
-      console.error('Erro ao excluir consulta:', error);
-      
-      // Verificar se o erro é de restrição de chave estrangeira
-      if (error.name === 'SequelizeForeignKeyConstraintError') {
-        return res.status(409).json({
-          status: 'error',
-          message: 'Não é possível excluir a consulta pois ela possui registros associados'
-        });
-      }
-      
+      console.error('Erro ao listar horários disponíveis:', error);
       return res.status(500).json({
-        status: 'error',
-        message: 'Erro ao excluir consulta',
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        error: 'Erro ao listar horários disponíveis',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   }
 };
 
 module.exports = consultaController;
-

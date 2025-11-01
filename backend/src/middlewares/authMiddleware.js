@@ -7,8 +7,7 @@ const authMiddleware = (req, res, next) => {
   
   if (!authHeader) {
     return res.status(401).json({ 
-      status: 'error',
-      message: 'Token não fornecido' 
+      error: 'Token não fornecido' 
     });
   }
 
@@ -17,8 +16,7 @@ const authMiddleware = (req, res, next) => {
   
   if (parts.length !== 2) {
     return res.status(401).json({ 
-      status: 'error',
-      message: 'Erro no formato do token' 
+      error: 'Erro no formato do token' 
     });
   }
 
@@ -26,21 +24,26 @@ const authMiddleware = (req, res, next) => {
   
   if (!/^Bearer$/i.test(scheme)) {
     return res.status(401).json({ 
-      status: 'error',
-      message: 'Token mal formatado' 
+      error: 'Token mal formatado' 
     });
   }
 
   // Verificar se o token é válido
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+  jwt.verify(token, process.env.JWT_SECRET || 'seu-secret-muito-seguro', (err, decoded) => {
     if (err) {
       return res.status(401).json({ 
-        status: 'error',
-        message: 'Token inválido' 
+        error: 'Token inválido ou expirado' 
       });
     }
 
-    // Se o token for válido, salva o ID do usuário para uso nas rotas
+    // Se o token for válido, salva os dados do usuário para uso nas rotas
+    req.user = {
+      id: decoded.id,
+      email: decoded.email,
+      cpf: decoded.cpf,
+      tipo: decoded.tipo,
+      role: decoded.role
+    };
     req.userId = decoded.id;
     req.userRole = decoded.role;
     return next();
@@ -52,8 +55,7 @@ const checkRole = (roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.userRole)) {
       return res.status(403).json({
-        status: 'error',
-        message: 'Acesso negado: você não tem permissão para acessar este recurso'
+        error: 'Acesso negado: você não tem permissão para acessar este recurso'
       });
     }
     return next();

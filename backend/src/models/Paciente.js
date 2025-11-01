@@ -38,6 +38,18 @@ const Paciente = sequelize.define('Paciente', {
   endereco: {
     type: DataTypes.STRING,
     allowNull: true
+  },
+  cep: {
+    type: DataTypes.STRING(9),
+    allowNull: true
+  },
+  senha: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  ativo: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
   }
 }, {
   tableName: 'pacientes',

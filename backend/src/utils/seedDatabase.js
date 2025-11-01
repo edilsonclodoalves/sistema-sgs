@@ -60,35 +60,67 @@ async function seedDatabase() {
         especialidade: 'Cardiologia',
         telefone: '(11) 91234-5678',
         email: 'ana@clinica.com'
+      },
+      {
+        nome: 'Dr. Pedro Costa',
+        crm: '11111-SP',
+        especialidade: 'Pediatria',
+        telefone: '(11) 92345-6789',
+        email: 'pedro.costa@clinica.com'
+      },
+      {
+        nome: 'Dra. Julia Mendes',
+        crm: '22222-SP',
+        especialidade: 'Ginecologia',
+        telefone: '(11) 93456-7890',
+        email: 'julia@clinica.com'
+      },
+      {
+        nome: 'Dr. Roberto Santos',
+        crm: '33333-SP',
+        especialidade: 'Ortopedia',
+        telefone: '(11) 94567-8901',
+        email: 'roberto@clinica.com'
       }
     ]);
     console.log('Médicos criados:', medicos.length);
 
-    // Criar pacientes
+    // Criar pacientes com senhas
+    const pacienteSenha = await bcrypt.hash('paciente123', 10);
+    
     const pacientes = await Paciente.bulkCreate([
       {
         nome: 'João Pereira',
-        cpf: '123.456.789-00',
+        cpf: '12345678900',
         data_nascimento: '1980-05-15',
-        telefone: '(11) 99876-5432',
+        telefone: '11998765432',
         email: 'joao@email.com',
-        endereco: 'Rua A, 123 - São Paulo/SP'
+        endereco: 'Rua A, 123 - São Paulo/SP',
+        cep: '01234567',
+        senha: pacienteSenha,
+        ativo: true
       },
       {
         nome: 'Maria Santos',
-        cpf: '987.654.321-00',
+        cpf: '98765432100',
         data_nascimento: '1990-10-20',
-        telefone: '(11) 98765-4321',
+        telefone: '11987654321',
         email: 'maria@email.com',
-        endereco: 'Av. B, 456 - São Paulo/SP'
+        endereco: 'Av. B, 456 - São Paulo/SP',
+        cep: '02345678',
+        senha: pacienteSenha,
+        ativo: true
       },
       {
         nome: 'Pedro Alves',
-        cpf: '456.789.123-00',
+        cpf: '45678912300',
         data_nascimento: '1975-03-25',
-        telefone: '(11) 97654-3210',
+        telefone: '11976543210',
         email: 'pedro@email.com',
-        endereco: 'Rua C, 789 - São Paulo/SP'
+        endereco: 'Rua C, 789 - São Paulo/SP',
+        cep: '03456789',
+        senha: pacienteSenha,
+        ativo: true
       }
     ]);
     console.log('Pacientes criados:', pacientes.length);
@@ -98,23 +130,42 @@ async function seedDatabase() {
       {
         id_paciente: 1,
         id_medico: 1,
-        data_consulta: '2025-06-10 09:00:00',
-        status: 'Agendada',
-        motivo: 'Consulta de rotina'
+        data_consulta: '2025-11-15',
+        horario: '09:00',
+        tipo: 'primeira_consulta',
+        especialidade: 'Clínico Geral',
+        unidade: 'UBS Centro',
+        status: 'agendada',
+        motivo: 'Consulta de rotina',
+        observacoes: 'Paciente solicita check-up',
+        protocolo: 'CONS-2025111509-001'
       },
       {
         id_paciente: 2,
         id_medico: 2,
-        data_consulta: '2025-06-10 10:00:00',
-        status: 'Agendada',
-        motivo: 'Dor no peito'
+        data_consulta: '2025-11-16',
+        horario: '10:00',
+        tipo: 'primeira_consulta',
+        especialidade: 'Cardiologia',
+        unidade: 'UBS Centro',
+        status: 'agendada',
+        motivo: 'Dor no peito',
+        observacoes: 'Paciente com histórico familiar de problemas cardíacos',
+        protocolo: 'CONS-2025111610-002'
       },
       {
         id_paciente: 3,
         id_medico: 1,
-        data_consulta: '2025-06-05 14:00:00',
-        status: 'Realizada',
-        motivo: 'Gripe'
+        data_consulta: '2025-11-05',
+        horario: '14:00',
+        tipo: 'retorno',
+        especialidade: 'Clínico Geral',
+        unidade: 'UBS Vila Nova',
+        status: 'realizada',
+        motivo: 'Gripe',
+        observacoes: 'Retorno após tratamento',
+        diagnostico: 'Gripe comum - Paciente recuperado',
+        protocolo: 'CONS-2025110514-003'
       }
     ]);
     console.log('Consultas criadas:', consultas.length);
@@ -123,9 +174,9 @@ async function seedDatabase() {
     const prontuarios = await Prontuario.bulkCreate([
       {
         id_paciente: 3,
-        data_registro: '2025-06-05 14:30:00',
-        diagnostico: 'Gripe comum',
-        observacoes: 'Paciente apresentou sintomas de gripe. Recomendado repouso e hidratação.'
+        data_registro: '2025-11-05 14:30:00',
+        diagnostico: 'Gripe comum - Paciente apresentou sintomas típicos de gripe viral',
+        observacoes: 'Paciente apresentou sintomas de gripe. Recomendado repouso, hidratação e antitérmicos. Retorno em caso de piora dos sintomas.'
       }
     ]);
     console.log('Prontuários criados:', prontuarios.length);
@@ -135,10 +186,10 @@ async function seedDatabase() {
       {
         id_consulta: 3,
         id_paciente: 3,
-        tipo_exame: 'Hemograma',
-        data_solicitacao: '2025-06-05 14:30:00',
+        tipo_exame: 'Hemograma Completo',
+        data_solicitacao: '2025-11-05 14:30:00',
         status: 'Concluído',
-        resultado: 'Resultados normais, sem alterações significativas.'
+        resultado: 'Resultados normais, sem alterações significativas. Contagem de leucócitos dentro dos valores de referência.'
       }
     ]);
     console.log('Exames criados:', exames.length);
@@ -166,4 +217,3 @@ async function seedDatabase() {
 
 // Executar a função
 seedDatabase();
-

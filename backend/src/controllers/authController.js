@@ -1,135 +1,185 @@
 const jwt = require('jsonwebtoken');
-const { Usuario } = require('../models');
+const bcrypt = require('bcrypt');
+const { Usuario, Paciente } = require('../models');
 require('dotenv').config();
 
 // Função para gerar token JWT
-const generateToken = (user) => {
+const generateToken = (user, type) => {
   return jwt.sign(
     { 
-      id: user.id_usuario, 
+      id: type === 'paciente' ? user.id_paciente : user.id_usuario, 
       email: user.email,
-      role: user.role 
+      cpf: user.cpf,
+      tipo: type,
+      role: user.role || 'paciente'
     },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN }
+    process.env.JWT_SECRET || 'seu-secret-muito-seguro',
+    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
 };
 
 // Controller de autenticação
 const authController = {
-  // Login de usuário
+  // Login de paciente com CPF
   login: async (req, res) => {
     try {
-      const { email, senha } = req.body;
+      const { cpf, senha, email } = req.body;
 
       // Validar dados de entrada
-      if (!email || !senha) {
+      if ((!cpf && !email) || !senha) {
         return res.status(400).json({
-          status: 'error',
-          message: 'Email e senha são obrigatórios'
+          error: 'CPF/Email e senha são obrigatórios'
         });
       }
 
-      // Buscar usuário pelo email
-      const usuario = await Usuario.findOne({ where: { email } });
+      let usuario = null;
+      let tipo = null;
+
+      // Tentar login como paciente com CPF
+      if (cpf) {
+        const cpfLimpo = cpf.replace(/\D/g, '');
+        usuario = await Paciente.findOne({ where: { cpf: cpfLimpo } });
+        tipo = 'paciente';
+      }
+
+      // Se não encontrou paciente, tentar login como usuário do sistema
+      if (!usuario && email) {
+        usuario = await Usuario.findOne({ where: { email } });
+        tipo = 'usuario';
+      }
 
       // Verificar se o usuário existe
       if (!usuario) {
         return res.status(401).json({
-          status: 'error',
-          message: 'Credenciais inválidas'
+          error: 'Credenciais inválidas'
         });
       }
 
       // Verificar senha
-      const senhaCorreta = await usuario.checkPassword(senha);
+      const senhaCorreta = await bcrypt.compare(senha, usuario.senha);
       if (!senhaCorreta) {
         return res.status(401).json({
-          status: 'error',
-          message: 'Credenciais inválidas'
+          error: 'Credenciais inválidas'
         });
       }
 
       // Gerar token JWT
-      const token = generateToken(usuario);
+      const token = generateToken(usuario, tipo);
 
       // Retornar dados do usuário e token
       return res.status(200).json({
-        status: 'success',
         message: 'Login realizado com sucesso',
-        data: {
-          usuario: {
-            id: usuario.id_usuario,
-            nome: usuario.nome,
-            email: usuario.email,
-            role: usuario.role
-          },
-          token
+        token,
+        usuario: {
+          id: tipo === 'paciente' ? usuario.id_paciente : usuario.id_usuario,
+          nome: usuario.nome,
+          email: usuario.email,
+          cpf: usuario.cpf,
+          tipo: tipo,
+          role: usuario.role || 'paciente'
         }
       });
     } catch (error) {
       console.error('Erro no login:', error);
       return res.status(500).json({
-        status: 'error',
-        message: 'Erro interno do servidor',
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        error: 'Erro interno do servidor',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   },
 
-  // Registro de novo usuário
+  // Registro de novo paciente
   register: async (req, res) => {
     try {
-      const { nome, email, senha, role } = req.body;
+      const { nome, cpf, data_nascimento, telefone, email, endereco, cep, senha } = req.body;
 
       // Validar dados de entrada
-      if (!nome || !email || !senha) {
+      if (!nome || !cpf || !data_nascimento || !telefone || !email || !senha) {
         return res.status(400).json({
-          status: 'error',
-          message: 'Nome, email e senha são obrigatórios'
+          error: 'Todos os campos obrigatórios devem ser preenchidos'
+        });
+      }
+
+      // Limpar CPF
+      const cpfLimpo = cpf.replace(/\D/g, '');
+
+      // Verificar se o CPF já está em uso
+      const cpfExistente = await Paciente.findOne({ where: { cpf: cpfLimpo } });
+      if (cpfExistente) {
+        return res.status(409).json({
+          error: 'CPF já está cadastrado'
         });
       }
 
       // Verificar se o email já está em uso
-      const usuarioExistente = await Usuario.findOne({ where: { email } });
-      if (usuarioExistente) {
+      const emailExistente = await Paciente.findOne({ where: { email } });
+      if (emailExistente) {
         return res.status(409).json({
-          status: 'error',
-          message: 'Email já está em uso'
+          error: 'Email já está em uso'
         });
       }
 
-      // Criar novo usuário
-      const novoUsuario = await Usuario.create({
+      // Hash da senha
+      const senhaHash = await bcrypt.hash(senha, 10);
+
+      // Criar novo paciente
+      const novoPaciente = await Paciente.create({
         nome,
+        cpf: cpfLimpo,
+        data_nascimento,
+        telefone: telefone.replace(/\D/g, ''),
         email,
-        senha,
-        role: role || 'recepcionista' // Papel padrão
+        endereco,
+        cep: cep ? cep.replace(/\D/g, '') : null,
+        senha: senhaHash,
+        ativo: true
       });
 
       // Gerar token JWT
-      const token = generateToken(novoUsuario);
+      const token = generateToken(novoPaciente, 'paciente');
 
-      // Retornar dados do usuário e token
+      // Retornar dados do paciente e token
       return res.status(201).json({
-        status: 'success',
-        message: 'Usuário registrado com sucesso',
-        data: {
-          usuario: {
-            id: novoUsuario.id_usuario,
-            nome: novoUsuario.nome,
-            email: novoUsuario.email,
-            role: novoUsuario.role
-          },
-          token
+        message: 'Cadastro realizado com sucesso',
+        token,
+        usuario: {
+          id: novoPaciente.id_paciente,
+          nome: novoPaciente.nome,
+          email: novoPaciente.email,
+          cpf: novoPaciente.cpf,
+          tipo: 'paciente'
         }
       });
     } catch (error) {
       console.error('Erro no registro:', error);
       return res.status(500).json({
-        status: 'error',
-        message: 'Erro interno do servidor',
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        error: 'Erro interno do servidor',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  },
+
+  // Verificar token
+  verifyToken: async (req, res) => {
+    try {
+      const token = req.headers.authorization?.split(' ')[1];
+      
+      if (!token) {
+        return res.status(401).json({
+          error: 'Token não fornecido'
+        });
+      }
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'seu-secret-muito-seguro');
+      
+      return res.status(200).json({
+        valid: true,
+        usuario: decoded
+      });
+    } catch (error) {
+      return res.status(401).json({
+        error: 'Token inválido',
+        valid: false
       });
     }
   }

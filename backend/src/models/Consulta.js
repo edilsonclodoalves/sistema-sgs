@@ -31,14 +31,44 @@ const Consulta = sequelize.define('Consulta', {
     type: DataTypes.DATE,
     allowNull: false
   },
-  status: {
-    type: DataTypes.ENUM('Agendada', 'Realizada', 'Cancelada'),
+  horario: {
+    type: DataTypes.STRING(5),
+    allowNull: false
+  },
+  tipo: {
+    type: DataTypes.ENUM('primeira_consulta', 'retorno', 'emergencia'),
     allowNull: false,
-    defaultValue: 'Agendada'
+    defaultValue: 'primeira_consulta'
+  },
+  especialidade: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  unidade: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  status: {
+    type: DataTypes.ENUM('agendada', 'confirmada', 'realizada', 'cancelada'),
+    allowNull: false,
+    defaultValue: 'agendada'
   },
   motivo: {
     type: DataTypes.STRING,
     allowNull: true
+  },
+  observacoes: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  diagnostico: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  protocolo: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    unique: true
   }
 }, {
   tableName: 'consultas',
