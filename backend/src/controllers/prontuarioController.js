@@ -47,37 +47,77 @@ const prontuarioController = {
   },
 
   // Obter um prontuário pelo ID
-  obterProntuario: async (req, res) => {
-    try {
-      const { id } = req.params;
+  // obterProntuario: async (req, res) => {
+  //   try {
+  //     const { id } = req.params;
       
-      const prontuario = await Prontuario.findByPk(id, {
-        include: [
-          { model: Paciente, attributes: ['id_paciente', 'nome', 'cpf'] }
-        ]
-      });
+  //     const prontuario = await Prontuario.findByPk(id, {
+  //       include: [
+  //         { model: Paciente, attributes: ['id_paciente', 'nome', 'cpf'] }
+  //       ]
+  //     });
       
-      if (!prontuario) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'Prontuário não encontrado'
-        });
-      }
+  //     if (!prontuario) {
+  //       return res.status(404).json({
+  //         status: 'error',
+  //         message: 'Prontuário não encontrado'
+  //       });
+  //     }
 
-      return res.status(200).json({
-        status: 'success',
-        message: 'Prontuário encontrado com sucesso',
-        data: prontuario
-      });
-    } catch (error) {
-      console.error('Erro ao obter prontuário:', error);
-      return res.status(500).json({
+  //     return res.status(200).json({
+  //       status: 'success',
+  //       message: 'Prontuário encontrado com sucesso',
+  //       data: prontuario
+  //     });
+  //   } catch (error) {
+  //     console.error('Erro ao obter prontuário:', error);
+  //     return res.status(500).json({
+  //       status: 'error',
+  //       message: 'Erro ao obter prontuário',
+  //       error: process.env.NODE_ENV === 'development' ? error.message : undefined
+  //     });
+  //   }
+  // },
+  // Obter o prontuário de um paciente pelo ID do paciente
+// Obter o prontuário de um paciente pelo ID do paciente
+obterProntuariodoPaciente: async (req, res) => {
+  try {
+    const { id } = req.params; // ID do paciente
+
+    const prontuario = await Prontuario.findOne({
+      where: { id_paciente: id },
+      include: [
+        {
+          model: Paciente,
+          attributes: ['id_paciente', 'nome', 'cpf']
+        }
+      ]
+    });
+
+    if (!prontuario) {
+      return res.status(404).json({
         status: 'error',
-        message: 'Erro ao obter prontuário',
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        message: 'Prontuário não encontrado para este paciente'
       });
     }
-  },
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Prontuário encontrado com sucesso',
+      data: { prontuario }
+    });
+
+  } catch (error) {
+    console.error('Erro ao obter prontuário do paciente:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Erro ao obter prontuário do paciente',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+},
+
+
 
   // Criar um novo prontuário
   criarProntuario: async (req, res) => {

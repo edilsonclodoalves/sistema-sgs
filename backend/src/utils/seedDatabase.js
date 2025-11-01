@@ -27,7 +27,8 @@ async function seedDatabase() {
         nome: 'Administrador',
         email: 'admin@clinica.com',
         senha: adminSenha,
-        role: 'admin'
+        role: 'admin',
+        cpf: '11111111111'
       },
       {
         nome: 'Dr. Carlos Silva',
@@ -40,7 +41,8 @@ async function seedDatabase() {
         nome: 'Maria Recepcionista',
         email: 'maria@clinica.com',
         senha: recepSenha,
-        role: 'recepcionista'
+        role: 'recepcionista',
+        cpf: '22222222222'
       }
     ]);
     console.log('Usuários criados:', usuarios.length);
