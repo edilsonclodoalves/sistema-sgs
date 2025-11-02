@@ -1,62 +1,57 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const { DataTypes, Model } = require('sequelize');
+const sequelize = require('../config/database');
 
-const Paciente = sequelize.define('Paciente', {
-  id_paciente: {
+class Paciente extends Model {}
+
+Paciente.init({
+  id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true,
-    allowNull: false
+    autoIncrement: true
   },
-  nome: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  cpf: {
-    type: DataTypes.STRING,
+  pessoa_id: {
+    type: DataTypes.INTEGER,
     allowNull: false,
     unique: true,
-    validate: {
-      len: [11, 14]
+    references: {
+      model: 'pessoas',
+      key: 'id'
     }
   },
-  data_nascimento: {
-    type: DataTypes.DATEONLY,
-    allowNull: false
-  },
-  telefone: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  email: {
-    type: DataTypes.STRING,
-    allowNull: true,
-    validate: {
-      isEmail: true
-    }
-  },
-  endereco: {
-    type: DataTypes.STRING,
+  numero_prontuario: {
+    type: DataTypes.STRING(50),
+    unique: true,
     allowNull: true
   },
-  cep: {
-    type: DataTypes.STRING(9),
+  tipo_sanguineo: {
+    type: DataTypes.ENUM('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'),
     allowNull: true
   },
-  senha: {
-    type: DataTypes.STRING,
-    allowNull: false
+  alergias: {
+    type: DataTypes.TEXT,
+    allowNull: true
   },
-  ativo: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true
+  medicamentos_uso: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  observacoes: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  convenio: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  numero_carteirinha: {
+    type: DataTypes.STRING(50),
+    allowNull: true
   }
 }, {
+  sequelize,
+  modelName: 'Paciente',
   tableName: 'pacientes',
-  timestamps: true,
-  createdAt: 'created_at',
-  updatedAt: 'updated_at'
+  timestamps: true
 });
 
 module.exports = Paciente;
-
