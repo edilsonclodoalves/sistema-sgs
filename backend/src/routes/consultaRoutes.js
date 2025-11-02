@@ -1,16 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const consultaController = require('../controllers/consultaController');
-const { authMiddleware } = require('../middlewares/authMiddleware');
+const ConsultaController = require('../controllers/ConsultaController');
+const { auth, authorize } = require('../middlewares/auth');
 
-// Rotas protegidas
-router.get('/', authMiddleware, consultaController.listarConsultas);
-router.get('/horarios-disponiveis', consultaController.listarHorariosDisponiveis);
-router.get('/status/:status', authMiddleware, consultaController.listarPorStatus);
-router.get('/:id', authMiddleware, consultaController.buscarConsulta);
-router.post('/', authMiddleware, consultaController.agendarConsulta);
-router.put('/:id', authMiddleware, consultaController.atualizarConsulta);
-router.delete('/:id', authMiddleware, consultaController.cancelarConsulta);
+router.get('/', auth, ConsultaController.index);
+router.post('/', auth, authorize('ADMINISTRADOR', 'MEDICO', 'RECEPCIONISTA'), ConsultaController.store);
+router.put('/:id', auth, authorize('ADMINISTRADOR', 'MEDICO', 'RECEPCIONISTA'), ConsultaController.update);
+router.put('/:id/cancelar', auth, authorize('ADMINISTRADOR', 'MEDICO', 'RECEPCIONISTA', 'PACIENTE'), ConsultaController.cancelar);
 
 module.exports = router;
-

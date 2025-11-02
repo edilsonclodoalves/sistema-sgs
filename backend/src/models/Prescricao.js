@@ -1,60 +1,51 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
-const Paciente = require('./Paciente');
-const Consulta = require('./Consulta');
+const { DataTypes, Model } = require('sequelize');
+const sequelize = require('../config/database');
 
-const Prescricao = sequelize.define('Prescricao', {
-  id_prescricao: {
+class Prescricao extends Model {}
+
+Prescricao.init({
+  id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true,
-    allowNull: false
+    autoIncrement: true
   },
-  id_consulta: {
+  prontuario_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: Consulta,
-      key: 'id_consulta'
-    }
-  },
-  id_paciente: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: Paciente,
-      key: 'id_paciente'
+      model: 'prontuarios',
+      key: 'id'
     }
   },
   medicamento: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(255),
     allowNull: false
   },
   dosagem: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(100),
     allowNull: false
   },
-  instrucoes: {
+  via_administracao: {
+    type: DataTypes.STRING(50),
+    allowNull: true
+  },
+  frequencia: {
+    type: DataTypes.STRING(100),
+    allowNull: false
+  },
+  duracao: {
+    type: DataTypes.STRING(100),
+    allowNull: false
+  },
+  observacoes: {
     type: DataTypes.TEXT,
-    allowNull: false
-  },
-  data_prescricao: {
-    type: DataTypes.DATE,
-    allowNull: false,
-    defaultValue: DataTypes.NOW
+    allowNull: true
   }
 }, {
+  sequelize,
+  modelName: 'Prescricao',
   tableName: 'prescricoes',
-  timestamps: true,
-  createdAt: 'created_at',
-  updatedAt: 'updated_at'
+  timestamps: true
 });
 
-// Definir as associações
-Prescricao.belongsTo(Paciente, { foreignKey: 'id_paciente' });
-Prescricao.belongsTo(Consulta, { foreignKey: 'id_consulta' });
-Paciente.hasMany(Prescricao, { foreignKey: 'id_paciente' });
-Consulta.hasMany(Prescricao, { foreignKey: 'id_consulta' });
-
 module.exports = Prescricao;
-

@@ -1,43 +1,49 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const { DataTypes, Model } = require('sequelize');
+const sequelize = require('../config/database');
 
-const Medico = sequelize.define('Medico', {
-  id_medico: {
+class Medico extends Model {}
+
+Medico.init({
+  id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true,
-    allowNull: false
+    autoIncrement: true
   },
-  nome: {
-    type: DataTypes.STRING,
-    allowNull: false
+  pessoa_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    unique: true,
+    references: {
+      model: 'pessoas',
+      key: 'id'
+    }
   },
   crm: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(20),
     allowNull: false,
     unique: true
   },
+  crm_uf: {
+    type: DataTypes.STRING(2),
+    allowNull: false
+  },
   especialidade: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(100),
     allowNull: false
   },
-  telefone: {
-    type: DataTypes.STRING,
-    allowNull: false
+  especialidades_secundarias: {
+    type: DataTypes.TEXT,
+    allowNull: true
   },
-  email: {
-    type: DataTypes.STRING,
-    allowNull: true,
-    validate: {
-      isEmail: true
-    }
+  valor_consulta: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true
   }
 }, {
+  sequelize,
+  modelName: 'Medico',
   tableName: 'medicos',
-  timestamps: true,
-  createdAt: 'created_at',
-  updatedAt: 'updated_at'
+  timestamps: true
 });
 
 module.exports = Medico;
-

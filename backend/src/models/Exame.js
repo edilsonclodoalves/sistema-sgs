@@ -1,61 +1,63 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
-const Paciente = require('./Paciente');
-const Consulta = require('./Consulta');
+const { DataTypes, Model } = require('sequelize');
+const sequelize = require('../config/database');
 
-const Exame = sequelize.define('Exame', {
-  id_exame: {
+class Exame extends Model {}
+
+Exame.init({
+  id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true,
-    allowNull: false
+    autoIncrement: true
   },
-  id_consulta: {
+  paciente_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: Consulta,
-      key: 'id_consulta'
+      model: 'pacientes',
+      key: 'id'
     }
   },
-  id_paciente: {
+  medico_solicitante_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: Paciente,
-      key: 'id_paciente'
+      model: 'medicos',
+      key: 'id'
     }
   },
   tipo_exame: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(100),
     allowNull: false
   },
   data_solicitacao: {
     type: DataTypes.DATE,
-    allowNull: false,
     defaultValue: DataTypes.NOW
+  },
+  data_realizacao: {
+    type: DataTypes.DATE,
+    allowNull: true
   },
   resultado: {
     type: DataTypes.TEXT,
     allowNull: true
   },
+  arquivo_resultado: {
+    type: DataTypes.STRING(500),
+    allowNull: true
+  },
   status: {
-    type: DataTypes.ENUM('Solicitado', 'Em Andamento', 'Concluído'),
-    allowNull: false,
-    defaultValue: 'Solicitado'
+    type: DataTypes.ENUM('SOLICITADO', 'AGENDADO', 'REALIZADO', 'CANCELADO'),
+    defaultValue: 'SOLICITADO'
+  },
+  observacoes: {
+    type: DataTypes.TEXT,
+    allowNull: true
   }
 }, {
+  sequelize,
+  modelName: 'Exame',
   tableName: 'exames',
-  timestamps: true,
-  createdAt: 'created_at',
-  updatedAt: 'updated_at'
+  timestamps: true
 });
 
-// Definir as associações
-Exame.belongsTo(Paciente, { foreignKey: 'id_paciente' });
-Exame.belongsTo(Consulta, { foreignKey: 'id_consulta' });
-Paciente.hasMany(Exame, { foreignKey: 'id_paciente' });
-Consulta.hasMany(Exame, { foreignKey: 'id_consulta' });
-
 module.exports = Exame;
-

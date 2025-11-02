@@ -1,20 +1,35 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
-const bcrypt = require('bcrypt');
+const { DataTypes, Model } = require('sequelize');
+const bcrypt = require('bcryptjs'); // ✅ CORRIGIDO: era 'bcrypt', agora é 'bcryptjs'
+const sequelize = require('../config/database');
 
-const Usuario = sequelize.define('Usuario', {
-  id_usuario: {
+class Usuario extends Model {
+  async validarSenha(senha) {
+    return await bcrypt.compare(senha, this.senha);
+  }
+
+  toJSON() {
+    const values = { ...this.get() };
+    delete values.senha;
+    return values;
+  }
+}
+
+Usuario.init({
+  id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true,
-    allowNull: false
+    autoIncrement: true
   },
-  nome: {
-    type: DataTypes.STRING,
-    allowNull: false
+  pessoa_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'pessoas',
+      key: 'id'
+    }
   },
   email: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(255),
     allowNull: false,
     unique: true,
     validate: {
@@ -22,24 +37,35 @@ const Usuario = sequelize.define('Usuario', {
     }
   },
   senha: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(255),
     allowNull: false
   },
-  role: {
-    type: DataTypes.ENUM('admin', 'medico', 'recepcionista'),
+  perfil: {
+    type: DataTypes.ENUM('ADMINISTRADOR', 'GESTOR', 'MEDICO', 'RECEPCIONISTA', 'PACIENTE'),
     allowNull: false,
-    defaultValue: 'recepcionista'
+    defaultValue: 'PACIENTE'
   },
-  id_referencia: {
+  ativo: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
+  },
+  ultimo_acesso: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  tentativas_login: {
     type: DataTypes.INTEGER,
-    allowNull: true,
-    comment: 'ID de referência para médicos (id_medico)'
+    defaultValue: 0
+  },
+  bloqueado_ate: {
+    type: DataTypes.DATE,
+    allowNull: true
   }
 }, {
+  sequelize,
+  modelName: 'Usuario',
   tableName: 'usuarios',
   timestamps: true,
-  createdAt: 'created_at',
-  updatedAt: 'updated_at',
   hooks: {
     beforeCreate: async (usuario) => {
       if (usuario.senha) {
@@ -54,10 +80,4 @@ const Usuario = sequelize.define('Usuario', {
   }
 });
 
-// Método para verificar senha
-Usuario.prototype.checkPassword = function(senha) {
-  return bcrypt.compare(senha, this.senha);
-};
-
 module.exports = Usuario;
-
