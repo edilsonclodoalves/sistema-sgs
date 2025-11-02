@@ -1,12 +1,17 @@
+
 {
   "name": "sgs",
+  "version": "1.0.0",
   "scripts": {
-    "start": "concurrently \"npm run dev --prefix backend\" \"npm start --prefix frontend\""
+    "start": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "npm run dev --prefix backend",
+    "client": "npm start --prefix frontend",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server-only": "npm run dev --prefix backend",
+    "client-only": "npm start --prefix frontend"
   },
   "devDependencies": {
-    "concurrently": "^8.0.0"
-  },
-  "dependencies": {
-    "react-input-mask": "^2.0.4"
+    "concurrently": "^8.0.0",
+    "nodemon": "^3.1.10"
   }
 }

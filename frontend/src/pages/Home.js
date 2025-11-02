@@ -70,7 +70,7 @@ const Home = () => {
                   <i className="bi bi-person-plus me-2"></i>
                   Cadastre-se
                 </Button>
-                <Button as={Link} to="/login" variant="outline-primary" size="lg">
+                <Button as={Link} to="/login-paciente" variant="outline-primary" size="lg">
                   <i className="bi bi-box-arrow-in-right me-2"></i>
                   Entrar
                 </Button>
@@ -112,7 +112,7 @@ const Home = () => {
                 ) : (
                   <Button 
                     as={Link} 
-                    to="/login" 
+                    to="/login-paciente" 
                     variant="outline-secondary"
                     className="mt-2"
                   >

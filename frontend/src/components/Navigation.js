@@ -10,7 +10,7 @@ const Navigation = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/login-paciente');
   };
 
   return (
@@ -79,7 +79,7 @@ const Navigation = () => {
               </NavDropdown>
             ) : (
               <>
-                <Nav.Link as={Link} to="/login">
+                <Nav.Link as={Link} to="login-paciente">
                   <i className="bi bi-box-arrow-in-right me-1"></i>
                   Entrar
                 </Nav.Link>

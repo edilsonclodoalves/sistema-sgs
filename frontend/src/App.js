@@ -11,7 +11,8 @@ import Navigation from './components/Navigation';
 
 // Pages
 import Home from './pages/Home';
-import Login from './pages/Login';
+import LoginPaciente from './pages/LoginPaciente';
+import LoginUsuario from './pages/LoginUsuario';
 import Cadastro from './pages/Cadastro';
 import AgendarConsulta from './pages/AgendarConsulta';
 import MinhasConsultas from './pages/MinhasConsultas';
@@ -33,7 +34,7 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  return user ? children : <Navigate to="/login" />;
+  return user ? children : <Navigate to="/login-paciente" />;
 };
 
 function AppContent() {
@@ -45,7 +46,8 @@ function AppContent() {
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
+            <Route path="/login-paciente" element={<LoginPaciente />} />
+             <Route path="/admin" element={<LoginUsuario />} />
             <Route path="/cadastro" element={<Cadastro />} />
             <Route path="/filas" element={<FilasAtendimento />} />
             <Route path="/unidades" element={<UnidadesSaude />} />

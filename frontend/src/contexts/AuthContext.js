@@ -19,9 +19,10 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = async (cpf, senha) => {
+  const login = async (credentials) => {
     try {
-      const response = await api.post('/auth/login', { cpf, senha });
+      // credentials pode ser { cpf, senha } ou { email, senha }
+      const response = await api.post('/auth/login', credentials);
       const { token, usuario } = response.data;
 
       localStorage.setItem('@SaudeSistema:token', token);

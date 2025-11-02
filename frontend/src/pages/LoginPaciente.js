@@ -3,7 +3,7 @@ import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap'
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-const Login = () => {
+const LoginPaciente = () => {
   const [cpf, setCpf] = useState('');
   const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,10 +17,16 @@ const Login = () => {
     setError('');
     setLoading(true);
 
-    const result = await login(cpf, senha);
+    // Remove formatação do CPF antes de enviar
+    const loginData = { 
+      cpf: cpf.replace(/\D/g, ''), 
+      senha 
+    };
+
+    const result = await login(loginData);
     
     if (result.success) {
-      navigate('/');
+      navigate('/paciente/dashboard'); // Redireciona para área do paciente
     } else {
       setError(result.message);
     }
@@ -36,7 +42,12 @@ const Login = () => {
         .replace(/(\d{3})(\d)/, '$1.$2')
         .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
     }
-    return value;
+    return cpf;
+  };
+
+  const handleCpfChange = (e) => {
+    const value = e.target.value;
+    setCpf(formatCPF(value));
   };
 
   return (
@@ -46,9 +57,9 @@ const Login = () => {
           <Card className="shadow">
             <Card.Body className="p-5">
               <div className="text-center mb-4">
-                <i className="bi bi-hospital text-primary" style={{ fontSize: '3rem' }}></i>
-                <h2 className="mt-3">Sistema de Saúde</h2>
-                <p className="text-muted">Entre com suas credenciais</p>
+                <i className="bi bi-person-circle text-primary" style={{ fontSize: '3rem' }}></i>
+                <h2 className="mt-3">Área do Paciente</h2>
+                <p className="text-muted">Entre com seu CPF e senha</p>
               </div>
 
               {error && (
@@ -64,7 +75,7 @@ const Login = () => {
                     type="text"
                     placeholder="000.000.000-00"
                     value={cpf}
-                    onChange={(e) => setCpf(formatCPF(e.target.value))}
+                    onChange={handleCpfChange}
                     required
                     maxLength={14}
                   />
@@ -98,12 +109,21 @@ const Login = () => {
                 </Button>
 
                 <div className="text-center">
-                  <Link to="/esqueci-senha" className="text-decoration-none me-3">
+                  <Link to="/paciente/esqueci-senha" className="text-decoration-none me-3">
                     Esqueci minha senha
                   </Link>
                   <span className="text-muted">|</span>
-                  <Link to="/cadastro" className="text-decoration-none ms-3">
+                  <Link to="/paciente/cadastro" className="text-decoration-none ms-3">
                     Criar conta
+                  </Link>
+                </div>
+
+                <hr className="my-4" />
+
+                <div className="text-center">
+                  <p className="text-muted mb-2">Você é um profissional de saúde?</p>
+                  <Link to="/admin" className="btn btn-outline-secondary w-100">
+                    Acessar como Usuário do Sistema
                   </Link>
                 </div>
               </Form>
@@ -115,4 +135,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default LoginPaciente;
