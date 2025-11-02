@@ -1,5 +1,5 @@
 TN:
-SF:src/config/database.js
+SF:src\config\database.js
 FNF:0
 FNH:0
 DA:1,1
@@ -23,7 +23,7 @@ BRF:12
 BRH:6
 end_of_record
 TN:
-SF:src/config/logger.js
+SF:src\config\logger.js
 FN:15,(anonymous_0)
 FNF:1
 FNH:0
@@ -52,7 +52,7 @@ BRF:6
 BRH:0
 end_of_record
 TN:
-SF:src/controllers/AuthController.js
+SF:src\controllers\AuthController.js
 FN:9,(anonymous_0)
 FN:132,(anonymous_1)
 FN:166,(anonymous_2)
@@ -164,7 +164,7 @@ BRF:31
 BRH:12
 end_of_record
 TN:
-SF:src/controllers/ConsultaController.js
+SF:src\controllers\ConsultaController.js
 FN:5,(anonymous_0)
 FN:56,(anonymous_1)
 FN:113,(anonymous_2)
@@ -251,7 +251,7 @@ BRF:25
 BRH:14
 end_of_record
 TN:
-SF:src/controllers/PacienteController.js
+SF:src\controllers\PacienteController.js
 FN:9,(anonymous_0)
 FN:70,(anonymous_1)
 FN:126,(anonymous_2)
@@ -410,7 +410,7 @@ BRF:46
 BRH:20
 end_of_record
 TN:
-SF:src/middlewares/auth.js
+SF:src\middlewares\auth.js
 FN:8,(anonymous_0)
 FN:98,(anonymous_1)
 FN:99,(anonymous_2)
@@ -510,7 +510,7 @@ BRF:28
 BRH:8
 end_of_record
 TN:
-SF:src/models/Consulta.js
+SF:src\models\Consulta.js
 FNF:0
 FNH:0
 DA:1,1
@@ -523,7 +523,7 @@ BRF:0
 BRH:0
 end_of_record
 TN:
-SF:src/models/Exame.js
+SF:src\models\Exame.js
 FNF:0
 FNH:0
 DA:1,1
@@ -536,7 +536,7 @@ BRF:0
 BRH:0
 end_of_record
 TN:
-SF:src/models/Medico.js
+SF:src\models\Medico.js
 FNF:0
 FNH:0
 DA:1,1
@@ -549,7 +549,7 @@ BRF:0
 BRH:0
 end_of_record
 TN:
-SF:src/models/Notificacao.js
+SF:src\models\Notificacao.js
 FNF:0
 FNH:0
 DA:1,1
@@ -562,7 +562,7 @@ BRF:0
 BRH:0
 end_of_record
 TN:
-SF:src/models/Paciente.js
+SF:src\models\Paciente.js
 FNF:0
 FNH:0
 DA:1,1
@@ -575,7 +575,7 @@ BRF:0
 BRH:0
 end_of_record
 TN:
-SF:src/models/Pessoa.js
+SF:src\models\Pessoa.js
 FNF:0
 FNH:0
 DA:1,1
@@ -588,7 +588,7 @@ BRF:0
 BRH:0
 end_of_record
 TN:
-SF:src/models/Prescricao.js
+SF:src\models\Prescricao.js
 FNF:0
 FNH:0
 DA:1,1
@@ -601,7 +601,7 @@ BRF:0
 BRH:0
 end_of_record
 TN:
-SF:src/models/Prontuario.js
+SF:src\models\Prontuario.js
 FNF:0
 FNH:0
 DA:1,1
@@ -614,7 +614,7 @@ BRF:0
 BRH:0
 end_of_record
 TN:
-SF:src/models/Usuario.js
+SF:src\models\Usuario.js
 FN:6,(anonymous_0)
 FN:10,(anonymous_1)
 FN:70,(anonymous_2)
@@ -648,7 +648,7 @@ BRF:4
 BRH:1
 end_of_record
 TN:
-SF:src/models/index.js
+SF:src\models\index.js
 FNF:0
 FNH:0
 DA:1,1
@@ -692,7 +692,7 @@ BRF:0
 BRH:0
 end_of_record
 TN:
-SF:src/routes/authRoutes.js
+SF:src\routes\authRoutes.js
 FNF:0
 FNH:0
 DA:1,1
@@ -711,7 +711,7 @@ BRF:0
 BRH:0
 end_of_record
 TN:
-SF:src/routes/consultaRoutes.js
+SF:src\routes\consultaRoutes.js
 FNF:0
 FNH:0
 DA:1,1
@@ -729,7 +729,7 @@ BRF:0
 BRH:0
 end_of_record
 TN:
-SF:src/routes/exameRoutes.js
+SF:src\routes\exameRoutes.js
 FN:7,(anonymous_0)
 FN:51,(anonymous_1)
 FN:79,(anonymous_2)
@@ -824,7 +824,7 @@ BRF:19
 BRH:0
 end_of_record
 TN:
-SF:src/routes/integration.test.js
+SF:src\routes\integration.test.js
 FN:12,(anonymous_0)
 FN:14,(anonymous_1)
 FN:19,(anonymous_2)
@@ -928,7 +928,7 @@ BRF:2
 BRH:0
 end_of_record
 TN:
-SF:src/routes/medicoRoutes.js
+SF:src\routes\medicoRoutes.js
 FN:8,(anonymous_0)
 FN:47,(anonymous_1)
 FN:64,(anonymous_2)
@@ -1047,7 +1047,7 @@ BRF:37
 BRH:0
 end_of_record
 TN:
-SF:src/routes/pacienteRoutes.js
+SF:src\routes\pacienteRoutes.js
 FNF:0
 FNH:0
 DA:1,1
@@ -1067,7 +1067,7 @@ BRF:0
 BRH:0
 end_of_record
 TN:
-SF:src/routes/prescricaoRoutes.js
+SF:src\routes\prescricaoRoutes.js
 FN:7,(anonymous_0)
 FN:53,(anonymous_1)
 FN:85,(anonymous_2)
@@ -1157,7 +1157,7 @@ BRF:17
 BRH:0
 end_of_record
 TN:
-SF:src/routes/prontuarioRoutes.js
+SF:src\routes\prontuarioRoutes.js
 FN:7,(anonymous_0)
 FN:54,(anonymous_1)
 FN:90,(anonymous_2)
