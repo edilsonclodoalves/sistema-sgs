@@ -145,12 +145,21 @@ class PacienteController {
         });
       }
 
-      // Verificar se CPF já existe
-      const pessoaExistente = await Pessoa.findOne({ where: { cpf } });
-      if (pessoaExistente) {
+      // ✅ Verificar se CPF já existe
+      const cpfExistente = await Pessoa.findOne({ where: { cpf } });
+      if (cpfExistente) {
         return res.status(400).json({
           error: 'CPF já cadastrado',
           message: 'Já existe uma pessoa cadastrada com este CPF'
+        });
+      }
+
+      // ✅ Verificar se EMAIL já existe
+      const emailExistente = await Pessoa.findOne({ where: { email } });
+      if (emailExistente) {
+        return res.status(400).json({
+          error: 'Email já cadastrado',
+          message: 'Já existe uma pessoa cadastrada com este email'
         });
       }
 
@@ -207,6 +216,35 @@ class PacienteController {
 
     } catch (error) {
       console.error('Erro ao criar paciente:', error);
+
+      // ✅ Tratamento específico para erros de constraint única (backup)
+      if (error.name === 'SequelizeUniqueConstraintError') {
+        const campo = error.errors[0]?.path || 'desconhecido';
+        
+        let mensagem = 'Já existe um registro com esse valor';
+        if (campo === 'cpf') {
+          mensagem = 'CPF já cadastrado no sistema';
+        } else if (campo === 'email') {
+          mensagem = 'Email já cadastrado no sistema';
+        }
+
+        return res.status(400).json({
+          error: mensagem,
+          campo: campo
+        });
+      }
+
+      // ✅ Tratamento para erros de validação
+      if (error.name === 'SequelizeValidationError') {
+        return res.status(400).json({
+          error: 'Erro de validação',
+          detalhes: error.errors.map(e => ({
+            campo: e.path,
+            mensagem: e.message
+          }))
+        });
+      }
+
       return res.status(500).json({
         error: 'Erro ao criar paciente',
         message: error.message

@@ -10,6 +10,8 @@ const { sequelize } = require('../models');
 
 let adminToken, medicoToken, pacienteToken;
 let pacienteId, consultaId;
+let pacienteCpf, pacienteEmail;
+let timestamp;
 
 describe('🧪 Suite de Testes SGS - Sistema de Gestão de Saúde', () => {
 
@@ -20,6 +22,11 @@ describe('🧪 Suite de Testes SGS - Sistema de Gestão de Saúde', () => {
   beforeAll(async () => {
     await sequelize.authenticate();
     console.log('\n✓ Conectado ao banco de dados de testes\n');
+    
+    // 🔥 GERA DADOS ÚNICOS PARA CADA EXECUÇÃO
+    timestamp = Date.now();
+    pacienteCpf = Math.floor(Math.random() * 1e11).toString().padStart(11, '0');
+    pacienteEmail = `teste.${timestamp}@email.com`; // Email único por timestamp
   });
 
   afterAll(async () => {
@@ -127,11 +134,11 @@ describe('🧪 Suite de Testes SGS - Sistema de Gestão de Saúde', () => {
         .post('/api/pacientes')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          cpf: '88888888888',
+          cpf: pacienteCpf,
           nome_completo: 'Paciente Teste Automatizado',
           data_nascimento: '1990-01-01',
           sexo: 'M',
-          email: 'teste.automatizado@email.com',
+          email: pacienteEmail, // ✅ Email único
           telefone: '31999999999',
           tipo_sanguineo: 'O+',
           convenio: 'Particular'
@@ -142,6 +149,7 @@ describe('🧪 Suite de Testes SGS - Sistema de Gestão de Saúde', () => {
       expect(res.body.paciente).toHaveProperty('numero_prontuario');
       
       pacienteId = res.body.paciente.id;
+      console.log(`✓ Paciente criado com ID: ${pacienteId}`);
     });
 
     test('não deve criar paciente com CPF duplicado', async () => {
@@ -149,16 +157,35 @@ describe('🧪 Suite de Testes SGS - Sistema de Gestão de Saúde', () => {
         .post('/api/pacientes')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          cpf: '88888888888', // CPF já usado no teste anterior
+          cpf: pacienteCpf, // ✅ Mesmo CPF do teste anterior
           nome_completo: 'Outro Nome',
           data_nascimento: '1990-01-01',
           sexo: 'M',
-          email: 'outro@email.com',
+          email: `outro.${timestamp}@email.com`, // ✅ Email diferente mas único
           telefone: '31999999999'
         });
 
       expect(res.statusCode).toBe(400);
       expect(res.body.error).toContain('CPF');
+    });
+
+    test('não deve criar paciente com email duplicado', async () => {
+      const novoCpf = Math.floor(Math.random() * 1e11).toString().padStart(11, '0');
+      
+      const res = await request(app)
+        .post('/api/pacientes')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          cpf: novoCpf, // CPF novo
+          nome_completo: 'Outro Paciente',
+          data_nascimento: '1990-01-01',
+          sexo: 'F',
+          email: pacienteEmail, // ✅ Mesmo email do primeiro teste
+          telefone: '31999999999'
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.error.toLowerCase()).toContain('email');
     });
 
   });
@@ -180,15 +207,22 @@ describe('🧪 Suite de Testes SGS - Sistema de Gestão de Saúde', () => {
     });
 
     test('deve agendar nova consulta', async () => {
+      // ✅ Gera horário único: 7 dias + timestamp (em minutos desde meia-noite)
       const dataHora = new Date();
       dataHora.setDate(dataHora.getDate() + 7); // Daqui a 7 dias
-      dataHora.setHours(14, 0, 0, 0);
+      
+      // Usa o timestamp para gerar um horário único (ex: 14h23min)
+      const minutosUnicos = Math.floor((timestamp % 10000) / 100); // Entre 0-99
+      const hora = 8 + Math.floor(minutosUnicos / 6); // Entre 8h e 24h
+      const minuto = (minutosUnicos % 6) * 10; // 0, 10, 20, 30, 40, 50
+      
+      dataHora.setHours(hora, minuto, 0, 0);
 
       const res = await request(app)
         .post('/api/consultas')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          paciente_id: pacienteId || 1,
+          paciente_id: pacienteId,
           medico_id: 1,
           data_hora: dataHora.toISOString(),
           tipo: 'CONSULTA',
@@ -200,6 +234,23 @@ describe('🧪 Suite de Testes SGS - Sistema de Gestão de Saúde', () => {
       expect(res.body.consulta.status).toBe('AGENDADA');
       
       consultaId = res.body.consulta.id;
+      console.log(`✓ Consulta agendada com ID: ${consultaId} às ${hora}:${minuto.toString().padStart(2, '0')}`);
+    });
+
+    test('não deve agendar consulta sem paciente_id', async () => {
+      const dataHora = new Date();
+      dataHora.setDate(dataHora.getDate() + 7);
+      
+      const res = await request(app)
+        .post('/api/consultas')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          medico_id: 1,
+          data_hora: dataHora.toISOString(),
+          tipo: 'CONSULTA'
+        });
+
+      expect(res.statusCode).toBe(400);
     });
 
   });
