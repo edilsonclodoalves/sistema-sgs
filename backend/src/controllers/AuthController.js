@@ -418,6 +418,117 @@ class AuthController {
       });
     }
   }
+/**
+ * Registrar novo usuário do sistema (apenas admin)
+ * POST /api/auth/register
+ */
+async register(req, res) {
+  try {
+    const {
+      // Dados da pessoa
+      cpf, nome_completo, data_nascimento, sexo, email,
+      telefone, celular, cep, logradouro, numero, complemento,
+      bairro, cidade, estado, foto_perfil,
+      // Dados do usuário
+      senha, perfil
+    } = req.body;
+
+    // Validar dados obrigatórios
+    if (!cpf || !nome_completo || !data_nascimento || !sexo || !email || !senha || !perfil) {
+      return res.status(400).json({
+        error: 'Dados incompletos',
+        message: 'CPF, nome, data de nascimento, sexo, email, senha e perfil são obrigatórios'
+      });
+    }
+
+    // Validar perfil
+    const perfisValidos = ['ADMINISTRADOR', 'GESTOR', 'MEDICO', 'RECEPCIONISTA'];
+    if (!perfisValidos.includes(perfil)) {
+      return res.status(400).json({
+        error: 'Perfil inválido',
+        message: `Perfil deve ser: ${perfisValidos.join(', ')}`
+      });
+    }
+
+    // Validar senha
+    if (senha.length < 6) {
+      return res.status(400).json({
+        error: 'Senha fraca',
+        message: 'A senha deve ter no mínimo 6 caracteres'
+      });
+    }
+
+    // Verificar se CPF já existe
+    const cpfExistente = await Pessoa.findOne({ where: { cpf } });
+    if (cpfExistente) {
+      return res.status(400).json({
+        error: 'CPF já cadastrado',
+        message: 'Já existe uma pessoa cadastrada com este CPF'
+      });
+    }
+
+    // Verificar se email já existe
+    const emailExistente = await Usuario.findOne({ where: { email } });
+    if (emailExistente) {
+      return res.status(400).json({
+        error: 'Email já cadastrado',
+        message: 'Já existe um usuário cadastrado com este email'
+      });
+    }
+
+    // Criar pessoa
+    const pessoa = await Pessoa.create({
+      cpf, nome_completo, data_nascimento, sexo, email,
+      telefone, celular, cep, logradouro, numero, complemento,
+      bairro, cidade, estado, foto_perfil,
+      ativo: true
+    });
+
+    // Criar usuário (senha será hasheada automaticamente pelo hook)
+    const usuario = await Usuario.create({
+      pessoa_id: pessoa.id,
+      email: email,
+      senha: senha,
+      perfil: perfil,
+      ativo: true
+    });
+
+    // Buscar usuário completo
+    const usuarioCriado = await Usuario.findByPk(usuario.id, {
+      include: [{
+        model: Pessoa,
+        as: 'pessoa',
+        attributes: { exclude: ['createdAt', 'updatedAt'] }
+      }],
+      attributes: { exclude: ['senha'] }
+    });
+
+    return res.status(201).json({
+      message: 'Usuário cadastrado com sucesso',
+      usuario: usuarioCriado
+    });
+
+  } catch (error) {
+    console.error('Erro ao registrar usuário:', error);
+
+    // Tratamento de erros de validação do Sequelize
+    if (error.name === 'SequelizeValidationError') {
+      return res.status(400).json({
+        error: 'Erro de validação',
+        detalhes: error.errors.map(e => ({
+          campo: e.path,
+          mensagem: e.message
+        }))
+      });
+    }
+
+    return res.status(500).json({
+      error: 'Erro no servidor',
+      message: 'Erro ao registrar usuário'
+    });
+  }
+}
+
 }
 
 module.exports = new AuthController();

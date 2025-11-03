@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const AuthController = require('../controllers/AuthController');
-const { auth } = require('../middlewares/auth');
+const { auth, authorize  } = require('../middlewares/auth');
 
 /**
  * @route POST /api/auth/login
@@ -16,6 +16,14 @@ router.post('/login', AuthController.login);
  * @access Public
  */
 router.post('/login-paciente', AuthController.loginPaciente);
+
+/**
+ * @route POST /api/auth/register
+ * @desc Registrar novo usuário do sistema (apenas admin)
+ * @access Private (Admin)
+ */
+router.post('/register', auth, authorize('ADMINISTRADOR'), AuthController.register);
+
 
 /**
  * @route GET /api/auth/me
