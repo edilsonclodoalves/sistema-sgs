@@ -5,10 +5,17 @@ const { auth } = require('../middlewares/auth');
 
 /**
  * @route POST /api/auth/login
- * @desc Login de usuário
+ * @desc Login de usuário do sistema
  * @access Public
  */
 router.post('/login', AuthController.login);
+
+/**
+ * @route POST /api/auth/login-paciente
+ * @desc Login de paciente (CPF e data de nascimento)
+ * @access Public
+ */
+router.post('/login-paciente', AuthController.loginPaciente);
 
 /**
  * @route GET /api/auth/me

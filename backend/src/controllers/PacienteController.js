@@ -132,9 +132,7 @@ class PacienteController {
         bairro, cidade, estado, foto_perfil,
         // Dados do paciente
         tipo_sanguineo, alergias, medicamentos_uso, observacoes,
-        convenio, numero_carteirinha,
-        // Credenciais (opcional)
-        criar_usuario = false, senha
+        convenio, numero_carteirinha
       } = req.body;
 
       // Validações básicas
@@ -190,16 +188,15 @@ class PacienteController {
         numero_carteirinha
       });
 
-      // Criar usuário se solicitado
-      if (criar_usuario && senha) {
-        await Usuario.create({
-          pessoa_id: pessoa.id,
-          email: email,
-          senha: senha,
-          perfil: 'PACIENTE',
-          ativo: true
-        });
-      }
+      // ✅ SEMPRE criar usuário para o paciente
+      // Senha é a data de nascimento (será hasheada automaticamente pelo hook do modelo Usuario)
+      await Usuario.create({
+        pessoa_id: pessoa.id,
+        email: email,
+        senha: data_nascimento, // Data de nascimento no formato YYYY-MM-DD
+        perfil: 'PACIENTE',
+        ativo: true
+      });
 
       // Recarregar com relacionamentos
       const pacienteCriado = await Paciente.findByPk(paciente.id, {
