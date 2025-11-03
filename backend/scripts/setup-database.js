@@ -177,22 +177,22 @@ async function seedDatabase() {
       ativo: true
     });
 
+    // ✅ Senha do paciente é a data de nascimento (será hasheada automaticamente)
     const usuarioPaciente = await Usuario.create({
       pessoa_id: pessoaPaciente.id,
       email: 'maria.santos@email.com',
-      senha: 'paciente123',
+      senha: '1995-08-20', // Data de nascimento no formato YYYY-MM-DD
       perfil: 'PACIENTE',
       ativo: true
     });
 
     const paciente = await Paciente.create({
       pessoa_id: pessoaPaciente.id,
-      numero_prontuario: 'PRON-001',
+      numero_prontuario: 'PRON-000001',
       tipo_sanguineo: 'O+',
       alergias: 'Nenhuma alergia conhecida',
-      convenio: 'Particular'
     });
-    log('✓ Paciente criado: maria.santos@email.com / paciente123', 'green');
+    log('✓ Paciente criado: CPF 22222222222 / Data nascimento: 1995-08-20', 'green');
 
     // 4. Criar recepcionista exemplo
     log('\nCriando recepcionista exemplo...', 'yellow');
@@ -221,6 +221,74 @@ async function seedDatabase() {
       ativo: true
     });
     log('✓ Recepcionista criado: ana.costa@sgs.com / recep123', 'green');
+
+    // 5. Criar mais pacientes exemplo
+    log('\nCriando pacientes adicionais...', 'yellow');
+    
+    const pessoaPaciente2 = await Pessoa.create({
+      cpf: '44444444444',
+      nome_completo: 'Carlos Oliveira',
+      data_nascimento: '1988-12-05',
+      sexo: 'M',
+      email: 'carlos.oliveira@email.com',
+      telefone: '31955555555',
+      celular: '31955555555',
+      cep: '30000000',
+      logradouro: 'Rua das Flores',
+      numero: '500',
+      bairro: 'Centro',
+      cidade: 'Pedro Leopoldo',
+      estado: 'MG',
+      ativo: true
+    });
+
+    await Usuario.create({
+      pessoa_id: pessoaPaciente2.id,
+      email: 'carlos.oliveira@email.com',
+      senha: '1988-12-05', // Data de nascimento
+      perfil: 'PACIENTE',
+      ativo: true
+    });
+
+    await Paciente.create({
+      pessoa_id: pessoaPaciente2.id,
+      numero_prontuario: 'PRON-000002',
+      tipo_sanguineo: 'A+',
+      alergias: 'Penicilina',
+    });
+
+    const pessoaPaciente3 = await Pessoa.create({
+      cpf: '55555555555',
+      nome_completo: 'Fernanda Lima',
+      data_nascimento: '2000-06-15',
+      sexo: 'F',
+      email: 'fernanda.lima@email.com',
+      telefone: '31944444444',
+      celular: '31944444444',
+      cep: '30000000',
+      logradouro: 'Av. Principal',
+      numero: '600',
+      bairro: 'Centro',
+      cidade: 'Pedro Leopoldo',
+      estado: 'MG',
+      ativo: true
+    });
+
+    await Usuario.create({
+      pessoa_id: pessoaPaciente3.id,
+      email: 'fernanda.lima@email.com',
+      senha: '2000-06-15', // Data de nascimento
+      perfil: 'PACIENTE',
+      ativo: true
+    });
+
+    await Paciente.create({
+      pessoa_id: pessoaPaciente3.id,
+      numero_prontuario: 'PRON-000003',
+      tipo_sanguineo: 'B+',
+    });
+    
+    log('✓ 3 pacientes criados com sucesso', 'green');
 
     return true;
   } catch (error) {
@@ -275,21 +343,38 @@ async function main() {
     logSection('✅ SETUP CONCLUÍDO COM SUCESSO!');
     
     log('Credenciais de acesso criadas:', 'blue');
-    log('\n👤 Administrador:', 'cyan');
+    
+    log('\n👤 ADMINISTRADOR:', 'cyan');
+    log('   Rota: POST /api/auth/login', 'yellow');
     log('   Email: admin@sgs.com', 'green');
     log('   Senha: admin123', 'green');
     
-    log('\n👨‍⚕️ Médico:', 'cyan');
+    log('\n👨‍⚕️ MÉDICO:', 'cyan');
+    log('   Rota: POST /api/auth/login', 'yellow');
     log('   Email: joao.silva@sgs.com', 'green');
     log('   Senha: medico123', 'green');
     
-    log('\n🏥 Paciente:', 'cyan');
-    log('   Email: maria.santos@email.com', 'green');
-    log('   Senha: paciente123', 'green');
-    
-    log('\n📋 Recepcionista:', 'cyan');
+    log('\n📋 RECEPCIONISTA:', 'cyan');
+    log('   Rota: POST /api/auth/login', 'yellow');
     log('   Email: ana.costa@sgs.com', 'green');
     log('   Senha: recep123', 'green');
+    
+    log('\n🏥 PACIENTES:', 'cyan');
+    log('   Rota: POST /api/auth/login-paciente', 'yellow');
+    log('\n   Paciente 1 - Maria Santos:', 'blue');
+    log('   CPF: 22222222222', 'green');
+    log('   Data de Nascimento: 1995-08-20', 'green');
+    log('\n   Paciente 2 - Carlos Oliveira:', 'blue');
+    log('   CPF: 44444444444', 'green');
+    log('   Data de Nascimento: 1988-12-05', 'green');
+    log('\n   Paciente 3 - Fernanda Lima:', 'blue');
+    log('   CPF: 55555555555', 'green');
+    log('   Data de Nascimento: 2000-06-15', 'green');
+    
+    log('\n📝 Observações Importantes:', 'yellow');
+    log('   • Usuários do sistema (admin, médico, recepcionista) usam /api/auth/login', 'yellow');
+    log('   • Pacientes usam /api/auth/login-paciente com CPF e data de nascimento', 'yellow');
+    log('   • A senha do paciente é sempre a data de nascimento no formato YYYY-MM-DD', 'yellow');
     
     log('\n🚀 Próximo passo: Execute "npm run dev" para iniciar o servidor\n', 'blue');
     
