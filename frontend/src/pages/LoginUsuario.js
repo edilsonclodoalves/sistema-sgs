@@ -9,7 +9,7 @@ const LoginUsuario = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
-  const { login } = useAuth();
+  const { loginUsuario } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -17,15 +17,11 @@ const LoginUsuario = () => {
     setError('');
     setLoading(true);
 
-    const loginData = { 
-      email, 
-      senha 
-    };
-
-    const result = await login(loginData);
+    const result = await loginUsuario(email, senha);
     
     if (result.success) {
-      navigate('/');
+      // Redireciona para o dashboard administrativo
+      navigate('/admin/dashboard');
     } else {
       setError(result.message);
     }
@@ -41,8 +37,8 @@ const LoginUsuario = () => {
             <Card.Body className="p-5">
               <div className="text-center mb-4">
                 <i className="bi bi-hospital text-primary" style={{ fontSize: '3rem' }}></i>
-                <h2 className="mt-3">Sistema de Saúde</h2>
-                <p className="text-muted">Entre com suas credenciais</p>
+                <h2 className="mt-3">Área Administrativa</h2>
+                <p className="text-muted">Sistema de Gestão de Saúde</p>
               </div>
 
               {error && (
@@ -56,14 +52,12 @@ const LoginUsuario = () => {
                   <Form.Label>Email</Form.Label>
                   <Form.Control
                     type="email"
-                    placeholder="Digite seu email"
+                    placeholder="seu@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    autoComplete="email"
                   />
-                  <Form.Text className="text-muted">
-                    Você deve fornecer o seu email para entrar
-                  </Form.Text>
                 </Form.Group>
 
                 <Form.Group className="mb-4">
@@ -74,6 +68,7 @@ const LoginUsuario = () => {
                     value={senha}
                     onChange={(e) => setSenha(e.target.value)}
                     required
+                    autoComplete="current-password"
                   />
                 </Form.Group>
 
@@ -89,17 +84,27 @@ const LoginUsuario = () => {
                       Entrando...
                     </>
                   ) : (
-                    'Entrar'
+                    <>
+                      <i className="bi bi-box-arrow-in-right me-2"></i>
+                      Entrar
+                    </>
                   )}
                 </Button>
 
                 <div className="text-center">
-                  <Link to="/esqueci-senha" className="text-decoration-none me-3">
+                  <Link to="/esqueci-senha" className="text-decoration-none">
+                    <i className="bi bi-key me-1"></i>
                     Esqueci minha senha
                   </Link>
-                  <span className="text-muted">|</span>
-                  <Link to="/cadastro" className="text-decoration-none ms-3">
-                    Criar conta
+                </div>
+
+                <hr className="my-4" />
+
+                <div className="text-center">
+                  <p className="text-muted mb-2">Você é um paciente?</p>
+                  <Link to="/login-paciente" className="btn btn-outline-secondary w-100">
+                    <i className="bi bi-person-circle me-2"></i>
+                    Acessar Área do Paciente
                   </Link>
                 </div>
               </Form>

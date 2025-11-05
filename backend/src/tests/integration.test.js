@@ -71,10 +71,10 @@ describe('🧪 Suite de Testes SGS - Sistema de Gestão de Saúde', () => {
 
     test('deve fazer login como paciente', async () => {
       const res = await request(app)
-        .post('/api/auth/login')
+        .post('/api/auth/login-paciente')
         .send({
-          email: 'maria.santos@email.com',
-          senha: 'paciente123'
+          cpf: '22222222222',
+          data_nascimento: '1995-08-20'
         });
 
       expect(res.statusCode).toBe(200);

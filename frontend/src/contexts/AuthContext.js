@@ -12,42 +12,60 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('@SaudeSistema:token');
 
     if (storedUser && token) {
-      setUser(JSON.parse(storedUser));
+      const userData = JSON.parse(storedUser);
+      setUser(userData);
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     }
 
     setLoading(false);
   }, []);
 
-  const login = async (credentials) => {
+  // Login de paciente (CPF + data de nascimento)
+  const loginPaciente = async (cpf, dataNascimento) => {
     try {
-      // credentials pode ser { cpf, senha } ou { email, senha }
-      const response = await api.post('/auth/login', credentials);
-      const { token, usuario } = response.data;
+      const response = await api.post('/auth/login-paciente', {
+        cpf: cpf.replace(/\D/g, ''), // Remove formatação
+        data_nascimento: dataNascimento
+      });
+
+      const { token, usuario, perfil } = response.data;
 
       localStorage.setItem('@SaudeSistema:token', token);
-      localStorage.setItem('@SaudeSistema:user', JSON.stringify(usuario));
+      localStorage.setItem('@SaudeSistema:user', JSON.stringify({ ...usuario, perfil }));
       
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setUser(usuario);
+      setUser({ ...usuario, perfil });
 
-      return { success: true };
+      return { success: true, perfil };
     } catch (error) {
       return {
         success: false,
-        message: error.response?.data?.error || 'Erro ao fazer login'
+        message: error.response?.data?.message || 'Erro ao fazer login'
       };
     }
   };
 
-  const register = async (userData) => {
+  // Login de usuário do sistema (email + senha)
+  const loginUsuario = async (email, senha) => {
     try {
-      const response = await api.post('/auth/register', userData);
-      return { success: true, data: response.data };
+      const response = await api.post('/auth/login', {
+        email,
+        senha
+      });
+
+      const { token, usuario, perfil } = response.data;
+
+      localStorage.setItem('@SaudeSistema:token', token);
+      localStorage.setItem('@SaudeSistema:user', JSON.stringify({ ...usuario, perfil }));
+      
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      setUser({ ...usuario, perfil });
+
+      return { success: true, perfil };
     } catch (error) {
       return {
         success: false,
-        message: error.response?.data?.error || 'Erro ao fazer cadastro'
+        message: error.response?.data?.message || 'Erro ao fazer login'
       };
     }
   };
@@ -59,8 +77,32 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  // Verifica se o usuário tem um perfil específico
+  const hasRole = (perfil) => {
+    if (!user) return false;
+    if (Array.isArray(perfil)) {
+      return perfil.includes(user.perfil);
+    }
+    return user.perfil === perfil;
+  };
+
+  // Verifica se é administrador
+  const isAdmin = () => hasRole('ADMINISTRADOR');
+
+  // Verifica se é paciente
+  const isPaciente = () => hasRole('PACIENTE');
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      loginPaciente,
+      loginUsuario,
+      logout,
+      hasRole,
+      isAdmin,
+      isPaciente
+    }}>
       {children}
     </AuthContext.Provider>
   );
@@ -74,4 +116,4 @@ export const useAuth = () => {
   return context;
 };
 
-export default AuthContext;
+export default AuthContext; 

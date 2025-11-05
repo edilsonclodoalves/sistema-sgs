@@ -5,11 +5,11 @@ import { useAuth } from '../contexts/AuthContext';
 
 const LoginPaciente = () => {
   const [cpf, setCpf] = useState('');
-  const [senha, setSenha] = useState('');
+  const [dataNascimento, setDataNascimento] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
-  const { login } = useAuth();
+  const { loginPaciente } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -17,16 +17,10 @@ const LoginPaciente = () => {
     setError('');
     setLoading(true);
 
-    // Remove formatação do CPF antes de enviar
-    const loginData = { 
-      cpf: cpf.replace(/\D/g, ''), 
-      senha 
-    };
-
-    const result = await login(loginData);
+    const result = await loginPaciente(cpf, dataNascimento);
     
     if (result.success) {
-      navigate('/paciente/dashboard'); // Redireciona para área do paciente
+      navigate('/paciente/dashboard');
     } else {
       setError(result.message);
     }
@@ -59,7 +53,7 @@ const LoginPaciente = () => {
               <div className="text-center mb-4">
                 <i className="bi bi-person-circle text-primary" style={{ fontSize: '3rem' }}></i>
                 <h2 className="mt-3">Área do Paciente</h2>
-                <p className="text-muted">Entre com seu CPF e senha</p>
+                <p className="text-muted">Entre com seu CPF e data de nascimento</p>
               </div>
 
               {error && (
@@ -79,17 +73,22 @@ const LoginPaciente = () => {
                     required
                     maxLength={14}
                   />
+                  <Form.Text className="text-muted">
+                    Digite o CPF cadastrado no sistema
+                  </Form.Text>
                 </Form.Group>
 
                 <Form.Group className="mb-4">
-                  <Form.Label>Senha</Form.Label>
+                  <Form.Label>Data de Nascimento</Form.Label>
                   <Form.Control
-                    type="password"
-                    placeholder="Digite sua senha"
-                    value={senha}
-                    onChange={(e) => setSenha(e.target.value)}
+                    type="date"
+                    value={dataNascimento}
+                    onChange={(e) => setDataNascimento(e.target.value)}
                     required
                   />
+                  <Form.Text className="text-muted">
+                    Use sua data de nascimento como senha
+                  </Form.Text>
                 </Form.Group>
 
                 <Button 
@@ -109,13 +108,9 @@ const LoginPaciente = () => {
                 </Button>
 
                 <div className="text-center">
-                  <Link to="/paciente/esqueci-senha" className="text-decoration-none me-3">
-                    Esqueci minha senha
-                  </Link>
-                  <span className="text-muted">|</span>
-                  <Link to="/paciente/cadastro" className="text-decoration-none ms-3">
-                    Criar conta
-                  </Link>
+                  <p className="text-muted small">
+                    Não consegue acessar? Entre em contato com a recepção da sua unidade de saúde.
+                  </p>
                 </div>
 
                 <hr className="my-4" />
@@ -123,6 +118,7 @@ const LoginPaciente = () => {
                 <div className="text-center">
                   <p className="text-muted mb-2">Você é um profissional de saúde?</p>
                   <Link to="/admin" className="btn btn-outline-secondary w-100">
+                    <i className="bi bi-hospital me-2"></i>
                     Acessar como Usuário do Sistema
                   </Link>
                 </div>
