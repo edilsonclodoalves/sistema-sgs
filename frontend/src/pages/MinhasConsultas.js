@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Badge, Table, Modal } from 'react-bootstrap';
+import { Container, Row, Col, Card, Table, Badge, Button, Alert } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
+import api from '../services/api';
 import { toast } from 'react-toastify';
-import consultaService from '../services/consultaService';
 
 const MinhasConsultas = () => {
   const [consultas, setConsultas] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showCancelModal, setShowCancelModal] = useState(false);
-  const [consultaSelecionada, setConsultaSelecionada] = useState(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     carregarConsultas();
@@ -15,189 +15,261 @@ const MinhasConsultas = () => {
 
   const carregarConsultas = async () => {
     try {
-      const data = await consultaService.listarConsultas();
-      setConsultas(data);
-    } catch (error) {
-      toast.error('Erro ao carregar consultas');
+      setLoading(true);
+      setError('');
+      
+      // Tenta o endpoint específico para pacientes
+      const response = await api.get('/consultas/minhas');
+      
+      const consultasData = Array.isArray(response.data)
+        ? response.data
+        : response.data.consultas || [];
+      
+      setConsultas(consultasData);
+      
+    } catch (err) {
+      console.error('Erro ao carregar consultas:', err);
+      
+      if (err.response?.status === 404) {
+        // Se o endpoint não existe, tenta o endpoint genérico
+        try {
+          const response = await api.get('/consultas');
+          const consultasData = Array.isArray(response.data)
+            ? response.data
+            : response.data.consultas || [];
+          setConsultas(consultasData);
+        } catch (err2) {
+          setError('Não foi possível carregar suas consultas.');
+          setConsultas([]);
+        }
+      } else {
+        setError('Erro ao carregar suas consultas.');
+        setConsultas([]);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCancelar = (consulta) => {
-    setConsultaSelecionada(consulta);
-    setShowCancelModal(true);
-  };
+  const handleCancelar = async (consultaId) => {
+    if (!window.confirm('Tem certeza que deseja cancelar esta consulta?')) {
+      return;
+    }
 
-  const confirmarCancelamento = async () => {
     try {
-      await consultaService.cancelarConsulta(consultaSelecionada.id);
+      await api.put(`/consultas/${consultaId}`, {
+        status: 'CANCELADA'
+      });
+      
       toast.success('Consulta cancelada com sucesso!');
-      setShowCancelModal(false);
       carregarConsultas();
-    } catch (error) {
-      toast.error('Erro ao cancelar consulta');
+      
+    } catch (err) {
+      const message = err.response?.data?.message || 'Erro ao cancelar consulta';
+      toast.error(message);
     }
   };
 
   const getStatusBadge = (status) => {
-    const statusMap = {
-      'agendada': { variant: 'primary', icon: 'calendar-check' },
-      'confirmada': { variant: 'success', icon: 'check-circle' },
-      'cancelada': { variant: 'danger', icon: 'x-circle' },
-      'realizada': { variant: 'secondary', icon: 'check-all' }
+    const badges = {
+      'AGENDADA': 'success',
+      'CONFIRMADA': 'info',
+      'REALIZADA': 'secondary',
+      'CANCELADA': 'danger',
+      'FALTOU': 'warning'
     };
-    
-    const config = statusMap[status] || statusMap['agendada'];
-    return (
-      <Badge bg={config.variant}>
-        <i className={`bi bi-${config.icon} me-1`}></i>
-        {status?.toUpperCase()}
-      </Badge>
-    );
+    return badges[status] || 'secondary';
   };
 
-  if (loading) {
-    return (
-      <Container className="py-5 text-center">
-        <div className="spinner-border text-primary"></div>
-      </Container>
-    );
-  }
+  const formatarData = (dataHora) => {
+    if (!dataHora) return 'N/A';
+    const date = new Date(dataHora);
+    return date.toLocaleDateString('pt-BR');
+  };
 
-  const consultasAgendadas = consultas.filter(c => c.status === 'agendada' || c.status === 'confirmada');
-  const consultasPassadas = consultas.filter(c => c.status === 'realizada' || c.status === 'cancelada');
+  const formatarHora = (dataHora) => {
+    if (!dataHora) return 'N/A';
+    const date = new Date(dataHora);
+    return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const isPodeAcaoConsulta = (consulta) => {
+    return consulta.status === 'AGENDADA' || consulta.status === 'CONFIRMADA';
+  };
+
+  // Separar consultas em futuras e passadas
+  const agora = new Date();
+  const consultasFuturas = consultas.filter(c => 
+    new Date(c.data_hora) >= agora && (c.status === 'AGENDADA' || c.status === 'CONFIRMADA')
+  );
+  const consultasPassadas = consultas.filter(c => 
+    new Date(c.data_hora) < agora || (c.status !== 'AGENDADA' && c.status !== 'CONFIRMADA')
+  );
 
   return (
     <Container className="py-4">
+      <div className="mb-4">
+        <h2>
+          <i className="bi bi-calendar-check me-2"></i>
+          Minhas Consultas
+        </h2>
+        <p className="text-muted">Visualize e gerencie suas consultas médicas</p>
+      </div>
+
+      {error && (
+        <Alert variant="danger" dismissible onClose={() => setError('')}>
+          {error}
+        </Alert>
+      )}
+
       <Row className="mb-4">
         <Col>
-          <h2>
-            <i className="bi bi-calendar-check text-primary me-2"></i>
-            Minhas Consultas
-          </h2>
+          <Link to="/paciente/agendar" className="btn btn-primary">
+            <i className="bi bi-plus-lg me-2"></i>
+            Agendar Nova Consulta
+          </Link>
         </Col>
       </Row>
 
-      {/* Consultas Agendadas */}
-      <Row className="mb-4">
-        <Col>
-          <Card className="shadow-sm">
-            <Card.Header className="bg-primary text-white">
-              <h5 className="mb-0">Consultas Agendadas</h5>
-            </Card.Header>
-            <Card.Body>
-              {consultasAgendadas.length > 0 ? (
-                <Table responsive hover>
-                  <thead>
-                    <tr>
-                      <th>Data</th>
-                      <th>Horário</th>
-                      <th>Médico</th>
-                      <th>Especialidade</th>
-                      <th>Unidade</th>
-                      <th>Status</th>
-                      <th>Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {consultasAgendadas.map(consulta => (
-                      <tr key={consulta.id}>
-                        <td>{new Date(consulta.data_consulta).toLocaleDateString('pt-BR')}</td>
-                        <td><Badge bg="info">{consulta.horario}</Badge></td>
-                        <td>Dr(a). {consulta.medico?.nome}</td>
-                        <td>{consulta.especialidade}</td>
-                        <td>{consulta.unidade}</td>
-                        <td>{getStatusBadge(consulta.status)}</td>
-                        <td>
-                          <Button 
-                            size="sm" 
+      {/* Próximas Consultas */}
+      <Card className="shadow-sm mb-4">
+        <Card.Header className="bg-success text-white">
+          <h5 className="mb-0">
+            <i className="bi bi-calendar-event me-2"></i>
+            Próximas Consultas
+          </h5>
+        </Card.Header>
+        <Card.Body>
+          {loading ? (
+            <div className="text-center py-5">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Carregando...</span>
+              </div>
+            </div>
+          ) : consultasFuturas.length > 0 ? (
+            <div className="table-responsive">
+              <Table hover>
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Horário</th>
+                    <th>Médico</th>
+                    <th>Especialidade</th>
+                    <th>Local</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {consultasFuturas.map((consulta) => (
+                    <tr key={consulta.id}>
+                      <td>{formatarData(consulta.data_hora)}</td>
+                      <td><strong>{formatarHora(consulta.data_hora)}</strong></td>
+                      <td>{consulta.medico?.pessoa?.nome_completo || 'N/A'}</td>
+                      <td>{consulta.tipo_consulta || consulta.especialidade || 'N/A'}</td>
+                      <td>{consulta.local || 'Unidade Central'}</td>
+                      <td>
+                        <Badge bg={getStatusBadge(consulta.status)}>
+                          {consulta.status}
+                        </Badge>
+                      </td>
+                      <td>
+                        {isPodeAcaoConsulta(consulta) && (
+                          <Button
                             variant="outline-danger"
-                            onClick={() => handleCancelar(consulta)}
+                            size="sm"
+                            onClick={() => handleCancelar(consulta.id)}
                           >
                             <i className="bi bi-x-circle me-1"></i>
                             Cancelar
                           </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              ) : (
-                <div className="text-center py-4 text-muted">
-                  <i className="bi bi-calendar-x" style={{ fontSize: '3rem' }}></i>
-                  <p className="mt-2">Você não possui consultas agendadas</p>
-                  <Button variant="primary" href="/agendar">
-                    Agendar Nova Consulta
-                  </Button>
-                </div>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Histórico de Consultas */}
-      {consultasPassadas.length > 0 && (
-        <Row>
-          <Col>
-            <Card className="shadow-sm">
-              <Card.Header>
-                <h5 className="mb-0">Histórico de Consultas</h5>
-              </Card.Header>
-              <Card.Body>
-                <Table responsive hover>
-                  <thead>
-                    <tr>
-                      <th>Data</th>
-                      <th>Horário</th>
-                      <th>Médico</th>
-                      <th>Especialidade</th>
-                      <th>Status</th>
+                        )}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {consultasPassadas.map(consulta => (
-                      <tr key={consulta.id}>
-                        <td>{new Date(consulta.data_consulta).toLocaleDateString('pt-BR')}</td>
-                        <td>{consulta.horario}</td>
-                        <td>Dr(a). {consulta.medico?.nome}</td>
-                        <td>{consulta.especialidade}</td>
-                        <td>{getStatusBadge(consulta.status)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-      )}
-
-      {/* Modal de Confirmação de Cancelamento */}
-      <Modal show={showCancelModal} onHide={() => setShowCancelModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Cancelar Consulta</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <p>Tem certeza que deseja cancelar esta consulta?</p>
-          {consultaSelecionada && (
-            <div className="bg-light p-3 rounded">
-              <p className="mb-1"><strong>Data:</strong> {new Date(consultaSelecionada.data_consulta).toLocaleDateString('pt-BR')}</p>
-              <p className="mb-1"><strong>Horário:</strong> {consultaSelecionada.horario}</p>
-              <p className="mb-0"><strong>Médico:</strong> Dr(a). {consultaSelecionada.medico?.nome}</p>
+                  ))}
+                </tbody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-center py-5">
+              <i className="bi bi-calendar-x text-muted" style={{ fontSize: '3rem' }}></i>
+              <p className="text-muted mt-3">Você não tem consultas agendadas</p>
+              <Link to="/paciente/agendar" className="btn btn-primary">
+                Agendar Consulta
+              </Link>
             </div>
           )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowCancelModal(false)}>
-            Não, manter consulta
-          </Button>
-          <Button variant="danger" onClick={confirmarCancelamento}>
-            Sim, cancelar consulta
-          </Button>
-        </Modal.Footer>
-      </Modal>
+        </Card.Body>
+      </Card>
+
+      {/* Histórico de Consultas */}
+      <Card className="shadow-sm">
+        <Card.Header className="bg-secondary text-white">
+          <h5 className="mb-0">
+            <i className="bi bi-clock-history me-2"></i>
+            Histórico de Consultas
+          </h5>
+        </Card.Header>
+        <Card.Body>
+          {loading ? (
+            <div className="text-center py-5">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Carregando...</span>
+              </div>
+            </div>
+          ) : consultasPassadas.length > 0 ? (
+            <div className="table-responsive">
+              <Table hover>
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Horário</th>
+                    <th>Médico</th>
+                    <th>Especialidade</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {consultasPassadas.map((consulta) => (
+                    <tr key={consulta.id}>
+                      <td>{formatarData(consulta.data_hora)}</td>
+                      <td>{formatarHora(consulta.data_hora)}</td>
+                      <td>{consulta.medico?.pessoa?.nome_completo || 'N/A'}</td>
+                      <td>{consulta.tipo_consulta || consulta.especialidade || 'N/A'}</td>
+                      <td>
+                        <Badge bg={getStatusBadge(consulta.status)}>
+                          {consulta.status}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-center py-4">
+              <i className="bi bi-inbox text-muted" style={{ fontSize: '3rem' }}></i>
+              <p className="text-muted mt-3">Sem histórico de consultas</p>
+            </div>
+          )}
+        </Card.Body>
+      </Card>
+
+      {/* Informações */}
+      <Card className="shadow-sm mt-4 border-info">
+        <Card.Body>
+          <h6 className="text-info">
+            <i className="bi bi-info-circle me-2"></i>
+            Informações Importantes
+          </h6>
+          <ul className="mb-0 small">
+            <li>Consultas podem ser canceladas até 24h antes do horário agendado</li>
+            <li>Em caso de emergência, procure o Pronto Atendimento</li>
+            <li>Lembre-se de trazer documentos e cartão do SUS</li>
+            <li>Chegue com 15 minutos de antecedência</li>
+          </ul>
+        </Card.Body>
+      </Card>
     </Container>
   );
 };

@@ -6,36 +6,33 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './styles/custom.css';
 
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext';
 import Navigation from './components/Navigation';
+import { ProtectedRoute, AdminRoute, PacienteRoute } from './components/ProtectedRoute';
 
-// Pages
+// Páginas Públicas
 import Home from './pages/Home';
 import LoginPaciente from './pages/LoginPaciente';
 import LoginUsuario from './pages/LoginUsuario';
-import Cadastro from './pages/Cadastro';
-import AgendarConsulta from './pages/AgendarConsulta';
-import MinhasConsultas from './pages/MinhasConsultas';
-import HistoricoMedico from './pages/HistoricoMedico';
 import FilasAtendimento from './pages/FilasAtendimento';
 import UnidadesSaude from './pages/UnidadesSaude';
 
-// Protected Route Component
-const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useAuth();
+// Páginas do Paciente
+import PacienteDashboard from './pages/PacienteDashboard';
+import PerfilPaciente from './pages/PerfilPaciente';
+import AgendarConsultaPaciente from './pages/AgendarConsultaPaciente';
+import MinhasConsultas from './pages/MinhasConsultas';
+import HistoricoMedico from './pages/HistoricoMedico';
 
-  if (loading) {
-    return (
-      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Carregando...</span>
-        </div>
-      </div>
-    );
-  }
-
-  return user ? children : <Navigate to="/login-paciente" />;
-};
+// Páginas do Administrador
+import AdminDashboard from './pages/AdminDashboard';
+import GerenciarPacientes from './pages/GerenciarPacientes';
+import CadastrarPaciente from './pages/Cadastro';
+import EditarPaciente from './pages/EditarPaciente';
+import GerenciarConsultas from './pages/GerenciarConsultas';
+import AgendarConsultaAdmin from './pages/AgendarConsultaAdmin';
+import GerenciarUsuarios from './pages/GerenciarUsuarios';
+import CadastrarUsuario from './pages/CadastrarUsuario';
 
 function AppContent() {
   return (
@@ -44,41 +41,136 @@ function AppContent() {
         <Navigation />
         <main className="flex-grow-1 bg-light">
           <Routes>
-            {/* Public Routes */}
+            {/* ============== ROTAS PÚBLICAS ============== */}
             <Route path="/" element={<Home />} />
             <Route path="/login-paciente" element={<LoginPaciente />} />
-             <Route path="/admin" element={<LoginUsuario />} />
-            <Route path="/cadastro" element={<Cadastro />} />
+            <Route path="/admin" element={<LoginUsuario />} />
             <Route path="/filas" element={<FilasAtendimento />} />
             <Route path="/unidades" element={<UnidadesSaude />} />
 
-            {/* Protected Routes */}
-            <Route 
-              path="/agendar" 
+            {/* ============== ROTAS DO PACIENTE ============== */}
+            <Route
+              path="/paciente/dashboard"
               element={
-                <ProtectedRoute>
-                  <AgendarConsulta />
-                </ProtectedRoute>
-              } 
+                <PacienteRoute>
+                  <PacienteDashboard />
+                </PacienteRoute>
+              }
             />
-            <Route 
-              path="/consultas" 
+            <Route
+              path="/paciente/perfil"
               element={
-                <ProtectedRoute>
+                <PacienteRoute>
+                  <PerfilPaciente />
+                </PacienteRoute>
+              }
+            />
+            <Route
+              path="/paciente/agendar"
+              element={
+                <PacienteRoute>
+                  <AgendarConsultaPaciente />
+                </PacienteRoute>
+              }
+            />
+            <Route
+              path="/paciente/consultas"
+              element={
+                <PacienteRoute>
                   <MinhasConsultas />
-                </ProtectedRoute>
-              } 
+                </PacienteRoute>
+              }
             />
-            <Route 
-              path="/historico" 
+            <Route
+              path="/paciente/historico"
               element={
-                <ProtectedRoute>
+                <PacienteRoute>
                   <HistoricoMedico />
-                </ProtectedRoute>
-              } 
+                </PacienteRoute>
+              }
             />
 
-            {/* Catch all route */}
+            {/* ============== ROTAS DO ADMINISTRADOR ============== */}
+            <Route
+              path="/admin/dashboard"
+              element={
+                <AdminRoute>
+                  <AdminDashboard />
+                </AdminRoute>
+              }
+            />
+
+            {/* Gerenciamento de Pacientes */}
+            <Route
+              path="/admin/pacientes"
+              element={
+                <AdminRoute>
+                  <GerenciarPacientes />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/pacientes/novo"
+              element={
+                <AdminRoute>
+                  <CadastrarPaciente />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/pacientes/:id/editar"
+              element={
+                <AdminRoute>
+                  <EditarPaciente />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/pacientes/:id/historico"
+              element={
+                <AdminRoute>
+                  <HistoricoMedico />
+                </AdminRoute>
+              }
+            />
+
+            {/* Gerenciamento de Consultas */}
+            <Route
+              path="/admin/consultas"
+              element={
+                <AdminRoute>
+                  <GerenciarConsultas />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/agendar"
+              element={
+                <AdminRoute>
+                  <AgendarConsultaAdmin />
+                </AdminRoute>
+              }
+            />
+
+            {/* Gerenciamento de Usuários */}
+            <Route
+              path="/admin/usuarios"
+              element={
+                <AdminRoute>
+                  <GerenciarUsuarios />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/usuarios/novo"
+              element={
+                <AdminRoute>
+                  <CadastrarUsuario />
+                </AdminRoute>
+              }
+            />
+
+            {/* ============== ROTA 404 ============== */}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </main>
