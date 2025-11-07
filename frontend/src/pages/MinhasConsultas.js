@@ -18,34 +18,20 @@ const MinhasConsultas = () => {
       setLoading(true);
       setError('');
       
-      // Tenta o endpoint específico para pacientes
-      const response = await api.get('/consultas/minhas');
+      // Busca todas as consultas do backend
+      const response = await api.get('/consultas');
       
       const consultasData = Array.isArray(response.data)
         ? response.data
         : response.data.consultas || [];
       
+      // O backend já deve filtrar as consultas do paciente logado via middleware
       setConsultas(consultasData);
       
     } catch (err) {
       console.error('Erro ao carregar consultas:', err);
-      
-      if (err.response?.status === 404) {
-        // Se o endpoint não existe, tenta o endpoint genérico
-        try {
-          const response = await api.get('/consultas');
-          const consultasData = Array.isArray(response.data)
-            ? response.data
-            : response.data.consultas || [];
-          setConsultas(consultasData);
-        } catch (err2) {
-          setError('Não foi possível carregar suas consultas.');
-          setConsultas([]);
-        }
-      } else {
-        setError('Erro ao carregar suas consultas.');
-        setConsultas([]);
-      }
+      setError('Não foi possível carregar suas consultas.');
+      setConsultas([]);
     } finally {
       setLoading(false);
     }
@@ -154,7 +140,7 @@ const MinhasConsultas = () => {
                     <th>Data</th>
                     <th>Horário</th>
                     <th>Médico</th>
-                    <th>Especialidade</th>
+                    <th>Tipo</th>
                     <th>Local</th>
                     <th>Status</th>
                     <th>Ações</th>
@@ -166,7 +152,7 @@ const MinhasConsultas = () => {
                       <td>{formatarData(consulta.data_hora)}</td>
                       <td><strong>{formatarHora(consulta.data_hora)}</strong></td>
                       <td>{consulta.medico?.pessoa?.nome_completo || 'N/A'}</td>
-                      <td>{consulta.tipo_consulta || consulta.especialidade || 'N/A'}</td>
+                      <td>{consulta.tipo || 'N/A'}</td>
                       <td>{consulta.local || 'Unidade Central'}</td>
                       <td>
                         <Badge bg={getStatusBadge(consulta.status)}>
@@ -225,7 +211,7 @@ const MinhasConsultas = () => {
                     <th>Data</th>
                     <th>Horário</th>
                     <th>Médico</th>
-                    <th>Especialidade</th>
+                    <th>Tipo</th>
                     <th>Status</th>
                   </tr>
                 </thead>
@@ -235,7 +221,7 @@ const MinhasConsultas = () => {
                       <td>{formatarData(consulta.data_hora)}</td>
                       <td>{formatarHora(consulta.data_hora)}</td>
                       <td>{consulta.medico?.pessoa?.nome_completo || 'N/A'}</td>
-                      <td>{consulta.tipo_consulta || consulta.especialidade || 'N/A'}</td>
+                      <td>{consulta.tipo || 'N/A'}</td>
                       <td>
                         <Badge bg={getStatusBadge(consulta.status)}>
                           {consulta.status}

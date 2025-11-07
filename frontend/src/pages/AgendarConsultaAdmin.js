@@ -16,9 +16,9 @@ const AgendarConsultaAdmin = () => {
   const [especialidades, setEspecialidades] = useState([]);
   
   const [formData, setFormData] = useState({
-    paciente_id: '',
     medico_id: '',
     especialidade: '',
+    tipo: 'CONSULTA', // CONSULTA, RETORNO ou EXAME
     data: '',
     horario: '',
     observacoes: ''

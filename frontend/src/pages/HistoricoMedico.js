@@ -14,6 +14,7 @@ const HistoricoMedico = () => {
 
   useEffect(() => {
     carregarHistorico();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const carregarHistorico = async () => {
@@ -23,7 +24,7 @@ const HistoricoMedico = () => {
 
       // Carregar consultas
       try {
-        const consultasRes = await api.get('/consultas/minhas');
+        const consultasRes = await api.get('/consultas');
         const consultasData = Array.isArray(consultasRes.data)
           ? consultasRes.data
           : consultasRes.data.consultas || [];
@@ -273,10 +274,14 @@ const HistoricoMedico = () => {
                           </td>
                           <td>
                             {exame.resultado_disponivel ? (
-                              <a href="#" className="btn btn-sm btn-outline-primary">
+                              <button 
+                                type="button"
+                                className="btn btn-sm btn-outline-primary"
+                                onClick={() => console.log('Download do resultado:', exame.id)}
+                              >
                                 <i className="bi bi-download me-1"></i>
                                 Baixar
-                              </a>
+                              </button>
                             ) : (
                               <span className="text-muted small">Pendente</span>
                             )}

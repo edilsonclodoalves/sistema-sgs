@@ -19,6 +19,7 @@ const AgendarConsultaPaciente = () => {
   const [formData, setFormData] = useState({
     medico_id: '',
     especialidade: '',
+    tipo: 'CONSULTA', // CONSULTA, RETORNO ou EXAME
     data: '',
     horario: '',
     observacoes: ''
@@ -68,23 +69,32 @@ const AgendarConsultaPaciente = () => {
     setLoading(true);
 
     try {
+      // Verifica se o paciente está logado
+      if (!user?.pessoa?.id) {
+        throw new Error('Usuário não identificado. Faça login novamente.');
+      }
+
       // Combinar data e horário
       const dataHora = `${formData.data}T${formData.horario}:00`;
       
       const dadosConsulta = {
+        paciente_id: user.pessoa.id, // ID do paciente logado
         medico_id: parseInt(formData.medico_id),
         data_hora: dataHora,
-        tipo_consulta: formData.especialidade,
+        tipo: formData.tipo, // CONSULTA, RETORNO ou EXAME
         observacoes: formData.observacoes
       };
 
-      await api.post('/consultas', dadosConsulta);
+      console.log('Enviando dados da consulta:', dadosConsulta);
+
+      const response = await api.post('/consultas', dadosConsulta);
       
       toast.success('Consulta agendada com sucesso!');
       navigate('/paciente/consultas');
       
     } catch (err) {
-      const message = err.response?.data?.message || 'Erro ao agendar consulta';
+      console.error('Erro ao agendar:', err);
+      const message = err.response?.data?.error || err.response?.data?.message || err.message || 'Erro ao agendar consulta';
       setError(message);
       toast.error(message);
     } finally {
@@ -160,6 +170,25 @@ const AgendarConsultaPaciente = () => {
                   </h5>
 
                   <Row>
+                    <Col md={12} className="mb-3">
+                      <Form.Group>
+                        <Form.Label>Tipo de Atendimento *</Form.Label>
+                        <Form.Select
+                          name="tipo"
+                          value={formData.tipo}
+                          onChange={handleChange}
+                          required
+                        >
+                          <option value="CONSULTA">Consulta</option>
+                          <option value="RETORNO">Retorno</option>
+                          <option value="EXAME">Exame</option>
+                        </Form.Select>
+                        <Form.Text className="text-muted">
+                          Selecione o tipo de atendimento desejado
+                        </Form.Text>
+                      </Form.Group>
+                    </Col>
+
                     <Col md={6} className="mb-3">
                       <Form.Group>
                         <Form.Label>Especialidade *</Form.Label>

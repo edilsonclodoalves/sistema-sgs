@@ -42,7 +42,7 @@ router.post('/',
  */
 router.put('/:id',
   auth,
-  authorize('ADMINISTRADOR', 'RECEPCIONISTA'),
+  authorize('ADMINISTRADOR', 'RECEPCIONISTA', 'PACIENTE'),
   PacienteController.update
 );
 

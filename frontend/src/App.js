@@ -8,7 +8,7 @@ import './styles/custom.css';
 
 import { AuthProvider } from './contexts/AuthContext';
 import Navigation from './components/Navigation';
-import { ProtectedRoute, AdminRoute, PacienteRoute } from './components/ProtectedRoute';
+import { AdminRoute, PacienteRoute } from './components/ProtectedRoute';
 
 // Páginas Públicas
 import Home from './pages/Home';

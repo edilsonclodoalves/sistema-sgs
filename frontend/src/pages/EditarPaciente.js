@@ -32,25 +32,68 @@ const EditarPaciente = () => {
     const fetchPaciente = async () => {
       try {
         const response = await api.get(`/pacientes/${id}`);
-        const paciente = response.data;
+        console.log('📊 Resposta completa da API:', response);
+        console.log('📊 response.data:', response.data);
+        
+        // Trata diferentes estruturas de resposta possíveis
+        let dadosPaciente;
+        
+        if (response.data.paciente) {
+          // Estrutura: { paciente: {...} }
+          dadosPaciente = response.data.paciente;
+        } else if (response.data.pessoa) {
+          // Estrutura com pessoa aninhada: { pessoa: {...}, id, ... }
+          dadosPaciente = {
+            ...response.data,
+            nome_completo: response.data.pessoa.nome_completo,
+            cpf: response.data.pessoa.cpf,
+            sexo: response.data.pessoa.sexo,
+            telefone: response.data.pessoa.telefone,
+            email: response.data.pessoa.email,
+            cep: response.data.pessoa.cep,
+            logradouro: response.data.pessoa.logradouro,
+            numero: response.data.pessoa.numero,
+            complemento: response.data.pessoa.complemento,
+            bairro: response.data.pessoa.bairro,
+            cidade: response.data.pessoa.cidade,
+            estado: response.data.pessoa.estado,
+          };
+        } else {
+          // Estrutura direta: { id, nome_completo, cpf, ... }
+          dadosPaciente = response.data;
+        }
+        
+        console.log('📊 Dados processados:', dadosPaciente);
 
         // Formata a data de nascimento para o formato YYYY-MM-DD
-        const dataNascimentoFormatada = paciente.data_nascimento 
-          ? new Date(paciente.data_nascimento).toISOString().split('T')[0] 
+        const dataNascimentoFormatada = dadosPaciente.data_nascimento 
+          ? new Date(dadosPaciente.data_nascimento).toISOString().split('T')[0] 
           : '';
 
-        setFormData({
-          nome_completo: paciente.pessoa.nome_completo || '',
-          cpf: paciente.pessoa.cpf || '',
+        const formDataToSet = {
+          nome_completo: dadosPaciente.nome_completo || '',
+          cpf: dadosPaciente.cpf || '',
           data_nascimento: dataNascimentoFormatada,
-          sexo: paciente.pessoa.sexo || '',
-          telefone: paciente.pessoa.telefone || '',
-          email: paciente.pessoa.email || '',
-          endereco: paciente.pessoa.endereco || {},
-        });
+          sexo: dadosPaciente.sexo || '',
+          telefone: dadosPaciente.telefone || '',
+          email: dadosPaciente.email || '',
+          endereco: {
+            cep: dadosPaciente.cep || '',
+            logradouro: dadosPaciente.logradouro || '',
+            numero: dadosPaciente.numero || '',
+            complemento: dadosPaciente.complemento || '',
+            bairro: dadosPaciente.bairro || '',
+            cidade: dadosPaciente.cidade || '',
+            estado: dadosPaciente.estado || '',
+          },
+        };
+        
+        console.log('📊 FormData que será setado:', formDataToSet);
+        setFormData(formDataToSet);
         setLoading(false);
       } catch (err) {
-        console.error('Erro ao buscar paciente:', err);
+        console.error('❌ Erro ao buscar paciente:', err);
+        console.error('❌ Detalhes do erro:', err.response?.data);
         setError('Não foi possível carregar os dados do paciente.');
         setLoading(false);
       }
