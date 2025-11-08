@@ -155,6 +155,63 @@ class PrescricaoController {
     }
   }
 
+  // Buscar prescrições por paciente
+  async prescricoesPaciente(req, res) {
+    try {
+      const { paciente_id } = req.params;
+
+      // Verificar se o paciente existe
+      const paciente = await Paciente.findByPk(paciente_id);
+      if (!paciente) {
+        return res.status(404).json({ error: 'Paciente não encontrado' });
+      }
+
+      const prescricoes = await Prescricao.findAll({
+        include: [{
+          model: Prontuario,
+          as: 'prontuario',
+          where: { paciente_id },
+          attributes: ['id', 'diagnostico_definitivo', 'created_at'],
+          include: [
+            {
+              model: Paciente,
+              as: 'paciente',
+              attributes: ['id'],
+              include: [{
+                model: Usuario,
+                as: 'pessoa',
+                attributes: ['nome', 'cpf', 'data_nascimento']
+              }]
+            },
+            {
+              model: Medico,
+              as: 'medico',
+              attributes: ['id', 'crm', 'especialidade'],
+              include: [{
+                model: Usuario,
+                as: 'pessoa',
+                attributes: ['nome']
+              }]
+            }
+          ]
+        }],
+        order: [['created_at', 'DESC']]
+      });
+
+      return res.json({
+        paciente_id,
+        total: prescricoes.length,
+        prescricoes
+      });
+    } catch (error) {
+      console.error('Erro ao buscar prescrições do paciente:', error);
+      return res.status(500).json({
+        error: 'Erro ao buscar prescrições do paciente',
+        message: error.message
+      });
+    }
+  }
+
   // Criar nova prescrição
   async store(req, res) {
     try {
