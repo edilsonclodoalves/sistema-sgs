@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Alert } from 'react-bootstrap';
+import { Container, Row, Col, Card, Alert } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
@@ -11,15 +11,32 @@ const PacienteDashboard = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    carregarConsultas();
-  }, []);
+    if (user?.pessoa?.id) {
+      carregarConsultas();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const carregarConsultas = async () => {
     try {
       setLoading(true);
       // Carrega apenas as consultas do paciente logado
-      const response = await api.get('/consultas/minhas');
-      setConsultas(response.data.consultas || []);
+      const response = await api.get('/consultas', {
+        params: {
+          paciente_id: user?.pessoa?.id
+        }
+      });
+      
+      // Filtra consultas futuras e ordena por data
+      const todasConsultas = response.data.consultas || [];
+      const consultasFuturas = todasConsultas
+        .filter(c => {
+          const dataConsulta = new Date(c.data_hora);
+          return dataConsulta >= new Date() && (c.status === 'AGENDADA' || c.status === 'CONFIRMADA');
+        })
+        .sort((a, b) => new Date(a.data_hora) - new Date(b.data_hora));
+      
+      setConsultas(consultasFuturas);
       setError('');
     } catch (err) {
       setError('Erro ao carregar suas consultas');
@@ -123,7 +140,9 @@ const PacienteDashboard = () => {
                     <div key={consulta.id} className="list-group-item">
                       <div className="d-flex justify-content-between align-items-center">
                         <div>
-                          <h6 className="mb-1">{consulta.especialidade}</h6>
+                          <h6 className="mb-1">
+                            {consulta.medico?.pessoa?.nome_completo || 'Médico não informado'}
+                          </h6>
                           <p className="mb-1 text-muted small">
                             <i className="bi bi-calendar me-1"></i>
                             {new Date(consulta.data_hora).toLocaleDateString('pt-BR')} às{' '}
@@ -133,11 +152,12 @@ const PacienteDashboard = () => {
                             })}
                           </p>
                           <p className="mb-0 text-muted small">
-                            <i className="bi bi-geo-alt me-1"></i>
-                            {consulta.local}
+                            <i className="bi bi-heart-pulse me-1"></i>
+                            {consulta.tipo || 'Consulta Geral'}
+                            {consulta.observacoes && ` - ${consulta.observacoes}`}
                           </p>
                         </div>
-                        <span className={`badge bg-${consulta.status === 'AGENDADA' ? 'success' : 'secondary'}`}>
+                        <span className={`badge bg-${consulta.status === 'AGENDADA' ? 'success' : 'info'}`}>
                           {consulta.status}
                         </span>
                       </div>

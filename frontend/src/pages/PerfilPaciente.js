@@ -77,13 +77,15 @@ const PerfilPaciente = () => {
       // Atualiza apenas os dados permitidos para pacientes
       const response = await api.put(`/pacientes/${user.id}`, formData);
       
-      setSuccess('Seus dados foram atualizados com sucesso!');
-      toast.success('Perfil atualizado!');
-      
-      // Atualiza o contexto do usuário
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
+      if (response.data) {
+        setSuccess('Seus dados foram atualizados com sucesso!');
+        toast.success('Perfil atualizado!');
+        
+        // Atualiza o contexto do usuário
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      }
     } catch (err) {
       const message = err.response?.data?.message || 'Erro ao atualizar seus dados';
       setError(message);

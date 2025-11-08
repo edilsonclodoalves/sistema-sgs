@@ -1,162 +1,211 @@
 import React from 'react';
-import { Container, Row, Col, Card, Button } from 'react-bootstrap';
+import { Container, Row, Col, Card } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 
 const Home = () => {
-  const { user } = useAuth();
-
-  const features = [
-    {
-      icon: 'bi-calendar-plus',
-      title: 'Agendamento Online',
-      description: 'Agende consultas médicas de forma rápida e prática',
-      link: '/agendar',
-      color: 'primary'
-    },
-    {
-      icon: 'bi-file-medical',
-      title: 'Histórico Médico',
-      description: 'Acesse seu histórico completo de consultas e exames',
-      link: '/historico',
-      color: 'success'
-    },
-    {
-      icon: 'bi-people',
-      title: 'Filas de Atendimento',
-      description: 'Consulte filas e tempo de espera em tempo real',
-      link: '/filas',
-      color: 'info'
-    },
-    {
-      icon: 'bi-syringe',
-      title: 'Campanhas de Vacinação',
-      description: 'Receba notificações sobre campanhas e vacinas',
-      link: '/notificacoes',
-      color: 'warning'
-    },
-    {
-      icon: 'bi-geo-alt',
-      title: 'Unidades de Saúde',
-      description: 'Encontre unidades de saúde próximas a você',
-      link: '/unidades',
-      color: 'danger'
-    },
-    {
-      icon: 'bi-star',
-      title: 'Avaliação de Serviços',
-      description: 'Avalie o atendimento e ajude a melhorar',
-      link: '/avaliacoes',
-      color: 'secondary'
-    }
-  ];
-
   return (
-    <Container className="py-5">
+    <div>
       {/* Hero Section */}
-      <Row className="mb-5">
-        <Col>
-          <div className="text-center py-5 bg-light rounded shadow-sm">
-            <i className="bi bi-hospital text-primary" style={{ fontSize: '4rem' }}></i>
-            <h1 className="display-4 mt-3">Sistema de Gestão de Saúde</h1>
-            <p className="lead text-muted">
-              {user 
-                ? `Bem-vindo(a), ${user.nome}!` 
-                : 'Acesso rápido e fácil aos serviços de saúde municipal'}
-            </p>
-            {!user && (
-              <div className="mt-4">
-                <Button as={Link} to="/cadastro" variant="primary" size="lg" className="me-3">
-                  <i className="bi bi-person-plus me-2"></i>
-                  Cadastre-se
-                </Button>
-                <Button as={Link} to="/login-paciente" variant="outline-primary" size="lg">
-                  <i className="bi bi-box-arrow-in-right me-2"></i>
-                  Entrar
-                </Button>
+      <div className="bg-primary text-white py-5">
+        <Container>
+          <Row className="align-items-center">
+            <Col lg={6}>
+              <h1 className="display-4 mb-3">
+                Sistema de Gestão de Saúde
+              </h1>
+              <p className="lead mb-4">
+                Acesso facilitado aos serviços de saúde municipal. 
+                Agende consultas, acompanhe seu histórico médico e muito mais.
+              </p>
+              <div className="d-flex gap-3">
+                <Link to="/login-paciente" className="btn btn-light btn-lg">
+                  <i className="bi bi-person-circle me-2"></i>
+                  Área do Paciente
+                </Link>
+                <Link to="/admin" className="btn btn-outline-light btn-lg">
+                  <i className="bi bi-hospital me-2"></i>
+                  Área Administrativa
+                </Link>
               </div>
-            )}
-          </div>
-        </Col>
-      </Row>
+            </Col>
+            <Col lg={6} className="text-center d-none d-lg-block">
+              <i className="bi bi-hospital" style={{ fontSize: '10rem', opacity: 0.3 }}></i>
+            </Col>
+          </Row>
+        </Container>
+      </div>
 
-      {/* Features Section */}
-      <Row className="mb-4">
-        <Col>
-          <h2 className="text-center mb-4">Nossos Serviços</h2>
-        </Col>
-      </Row>
-
-      <Row className="g-4">
-        {features.map((feature, index) => (
-          <Col key={index} md={6} lg={4}>
-            <Card className="h-100 shadow-sm hover-shadow">
-              <Card.Body className="text-center">
-                <i 
-                  className={`bi ${feature.icon} text-${feature.color}`} 
-                  style={{ fontSize: '3rem' }}
-                ></i>
-                <Card.Title className="mt-3">{feature.title}</Card.Title>
-                <Card.Text className="text-muted">
-                  {feature.description}
-                </Card.Text>
-                {user ? (
-                  <Button 
-                    as={Link} 
-                    to={feature.link} 
-                    variant={feature.color}
-                    className="mt-2"
-                  >
-                    Acessar
-                  </Button>
-                ) : (
-                  <Button 
-                    as={Link} 
-                    to="/login-paciente" 
-                    variant="outline-secondary"
-                    className="mt-2"
-                  >
-                    Faça login
-                  </Button>
-                )}
+      {/* Services Section */}
+      <Container className="py-5">
+        <h2 className="text-center mb-5">Nossos Serviços</h2>
+        <Row>
+          <Col md={6} lg={3} className="mb-4">
+            <Card className="h-100 text-center shadow-sm hover-shadow">
+              <Card.Body>
+                <i className="bi bi-calendar-plus text-primary" style={{ fontSize: '3rem' }}></i>
+                <h5 className="mt-3">Agendamento Online</h5>
+                <p className="text-muted">
+                  Agende suas consultas de forma rápida e prática
+                </p>
               </Card.Body>
             </Card>
           </Col>
-        ))}
-      </Row>
+
+          <Col md={6} lg={3} className="mb-4">
+            <Card className="h-100 text-center shadow-sm hover-shadow">
+              <Card.Body>
+                <i className="bi bi-file-medical text-success" style={{ fontSize: '3rem' }}></i>
+                <h5 className="mt-3">Histórico Médico</h5>
+                <p className="text-muted">
+                  Acesse seu histórico completo de atendimentos
+                </p>
+              </Card.Body>
+            </Card>
+          </Col>
+
+          <Col md={6} lg={3} className="mb-4">
+            <Card className="h-100 text-center shadow-sm hover-shadow">
+              <Card.Body>
+                <i className="bi bi-people text-info" style={{ fontSize: '3rem' }}></i>
+                <h5 className="mt-3">Filas em Tempo Real</h5>
+                <p className="text-muted">
+                  Acompanhe as filas de atendimento
+                </p>
+              </Card.Body>
+            </Card>
+          </Col>
+
+          <Col md={6} lg={3} className="mb-4">
+            <Card className="h-100 text-center shadow-sm hover-shadow">
+              <Card.Body>
+                <i className="bi bi-geo-alt text-warning" style={{ fontSize: '3rem' }}></i>
+                <h5 className="mt-3">Unidades de Saúde</h5>
+                <p className="text-muted">
+                  Encontre a unidade mais próxima
+                </p>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      </Container>
+
+      {/* Quick Access Section */}
+      <div className="bg-light py-5">
+        <Container>
+          <h2 className="text-center mb-5">Acesso Rápido</h2>
+          <Row className="justify-content-center">
+            <Col md={6} lg={4} className="mb-3">
+              <Card className="shadow-sm hover-shadow">
+                <Card.Body>
+                  <h5>
+                    <i className="bi bi-people me-2 text-primary"></i>
+                    Ver Filas
+                  </h5>
+                  <p className="text-muted mb-3">
+                    Consulte as filas de atendimento em tempo real
+                  </p>
+                  <Link to="/filas" className="btn btn-outline-primary w-100">
+                    Acessar
+                  </Link>
+                </Card.Body>
+              </Card>
+            </Col>
+
+            <Col md={6} lg={4} className="mb-3">
+              <Card className="shadow-sm hover-shadow">
+                <Card.Body>
+                  <h5>
+                    <i className="bi bi-geo-alt me-2 text-success"></i>
+                    Unidades de Saúde
+                  </h5>
+                  <p className="text-muted mb-3">
+                    Encontre endereços e contatos das unidades
+                  </p>
+                  <Link to="/unidades" className="btn btn-outline-success w-100">
+                    Acessar
+                  </Link>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        </Container>
+      </div>
 
       {/* Info Section */}
-      <Row className="mt-5">
-        <Col>
-          <Card className="bg-primary text-white">
-            <Card.Body className="text-center py-4">
-              <h3>
-                <i className="bi bi-info-circle me-2"></i>
-                Como funciona?
-              </h3>
-              <Row className="mt-4">
-                <Col md={3}>
-                  <i className="bi bi-1-circle" style={{ fontSize: '2rem' }}></i>
-                  <p className="mt-2">Faça seu cadastro</p>
-                </Col>
-                <Col md={3}>
-                  <i className="bi bi-2-circle" style={{ fontSize: '2rem' }}></i>
-                  <p className="mt-2">Escolha o serviço</p>
-                </Col>
-                <Col md={3}>
-                  <i className="bi bi-3-circle" style={{ fontSize: '2rem' }}></i>
-                  <p className="mt-2">Agende sua consulta</p>
-                </Col>
-                <Col md={3}>
-                  <i className="bi bi-4-circle" style={{ fontSize: '2rem' }}></i>
-                  <p className="mt-2">Seja atendido</p>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+      <Container className="py-5">
+        <Row className="align-items-center">
+          <Col lg={6} className="mb-4 mb-lg-0">
+            <h2>Como Funciona?</h2>
+            <div className="mt-4">
+              <div className="d-flex mb-3">
+                <div className="me-3">
+                  <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px' }}>
+                    1
+                  </div>
+                </div>
+                <div>
+                  <h5>Faça seu Cadastro</h5>
+                  <p className="text-muted">
+                    Procure a recepção da unidade de saúde mais próxima com seus documentos
+                  </p>
+                </div>
+              </div>
+
+              <div className="d-flex mb-3">
+                <div className="me-3">
+                  <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px' }}>
+                    2
+                  </div>
+                </div>
+                <div>
+                  <h5>Acesse o Sistema</h5>
+                  <p className="text-muted">
+                    Use seu CPF e data de nascimento para fazer login
+                  </p>
+                </div>
+              </div>
+
+              <div className="d-flex">
+                <div className="me-3">
+                  <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px' }}>
+                    3
+                  </div>
+                </div>
+                <div>
+                  <h5>Agende suas Consultas</h5>
+                  <p className="text-muted">
+                    Escolha data, horário e especialidade de forma online
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Col>
+
+          <Col lg={6}>
+            <Card className="shadow border-primary">
+              <Card.Body className="p-4">
+                <h4 className="mb-3">
+                  <i className="bi bi-telephone me-2"></i>
+                  Central de Atendimento
+                </h4>
+                <p className="mb-2">
+                  <strong>Telefone:</strong> 0800 123 4567
+                </p>
+                <p className="mb-2">
+                  <strong>WhatsApp:</strong> (12) 34567-8900
+                </p>
+                <p className="mb-2">
+                  <strong>Email:</strong> contato@saude.gov.br
+                </p>
+                <p className="mb-0">
+                  <strong>Horário:</strong> Segunda a Sexta, 7h às 19h
+                </p>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      </Container>
+    </div>
   );
 };
 

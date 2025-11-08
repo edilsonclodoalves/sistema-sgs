@@ -1,92 +1,52 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Container, Row, Col, Card, Badge, ProgressBar } from 'react-bootstrap';
 
 const FilasAtendimento = () => {
-  const [filas, setFilas] = useState([
-    {
-      id: 1,
-      unidade: 'UBS Centro',
-      tipo: 'Clínico Geral',
-      pessoasNaFila: 8,
-      tempoEstimado: '40 min',
-      statusCor: 'warning'
-    },
-    {
-      id: 2,
-      unidade: 'UBS Centro',
-      tipo: 'Pediatria',
-      pessoasNaFila: 3,
-      tempoEstimado: '15 min',
-      statusCor: 'success'
-    },
-    {
-      id: 3,
-      unidade: 'UBS Vila Nova',
-      tipo: 'Clínico Geral',
-      pessoasNaFila: 12,
-      tempoEstimado: '60 min',
-      statusCor: 'danger'
-    },
-    {
-      id: 4,
-      unidade: 'UBS Jardim das Flores',
-      tipo: 'Ginecologia',
-      pessoasNaFila: 5,
-      tempoEstimado: '25 min',
-      statusCor: 'warning'
-    },
-    {
-      id: 5,
-      unidade: 'Hospital Municipal',
-      tipo: 'Emergência',
-      pessoasNaFila: 15,
-      tempoEstimado: '45 min',
-      statusCor: 'danger'
-    }
-  ]);
+  // Dados mockados - em produção viriam da API
+  const filas = [
+    { id: 1, unidade: 'UBS Centro', tipo: 'Clínica Geral', aguardando: 8, atendidos: 15, tempoMedio: '25 min' },
+    { id: 2, unidade: 'UBS Centro', tipo: 'Pediatria', aguardando: 5, atendidos: 12, tempoMedio: '30 min' },
+    { id: 3, unidade: 'UBS Norte', tipo: 'Clínica Geral', aguardando: 12, atendidos: 18, tempoMedio: '35 min' },
+    { id: 4, unidade: 'UBS Norte', tipo: 'Odontologia', aguardando: 3, atendidos: 8, tempoMedio: '40 min' },
+    { id: 5, unidade: 'UBS Sul', tipo: 'Clínica Geral', aguardando: 6, atendidos: 20, tempoMedio: '20 min' },
+    { id: 6, unidade: 'UBS Sul', tipo: 'Enfermagem', aguardando: 4, atendidos: 10, tempoMedio: '15 min' },
+  ];
 
-  const [ultimaAtualizacao, setUltimaAtualizacao] = useState(new Date());
+  const getFilaStatus = (aguardando) => {
+    if (aguardando <= 5) return { color: 'success', label: 'Baixa' };
+    if (aguardando <= 10) return { color: 'warning', label: 'Moderada' };
+    return { color: 'danger', label: 'Alta' };
+  };
 
-  useEffect(() => {
-    // Simulação de atualização em tempo real
-    const interval = setInterval(() => {
-      setUltimaAtualizacao(new Date());
-    }, 30000); // Atualiza a cada 30 segundos
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const getStatusInfo = (pessoasNaFila) => {
-    if (pessoasNaFila <= 5) {
-      return { nivel: 'Baixo', cor: 'success', porcentagem: 33 };
-    } else if (pessoasNaFila <= 10) {
-      return { nivel: 'Moderado', cor: 'warning', porcentagem: 66 };
-    } else {
-      return { nivel: 'Alto', cor: 'danger', porcentagem: 100 };
-    }
+  const calculateProgress = (atendidos, aguardando) => {
+    const total = atendidos + aguardando;
+    return (atendidos / total) * 100;
   };
 
   return (
-    <Container className="py-4">
+    <Container className="py-5">
+      <div className="mb-4">
+        <h2>
+          <i className="bi bi-people me-2"></i>
+          Filas de Atendimento
+        </h2>
+        <p className="text-muted">
+          Acompanhe em tempo real as filas nas unidades de saúde
+        </p>
+      </div>
+
       <Row className="mb-4">
         <Col>
-          <Card className="shadow-sm">
+          <Card className="shadow-sm border-info">
             <Card.Body>
-              <div className="d-flex justify-content-between align-items-center">
+              <div className="d-flex align-items-center">
+                <i className="bi bi-info-circle text-info me-3" style={{ fontSize: '2rem' }}></i>
                 <div>
-                  <h2>
-                    <i className="bi bi-people text-primary me-2"></i>
-                    Filas de Atendimento
-                  </h2>
-                  <p className="text-muted mb-0">
-                    Acompanhe o tempo de espera nas unidades de saúde em tempo real
+                  <h6 className="mb-1">Informação</h6>
+                  <p className="mb-0 small text-muted">
+                    As informações são atualizadas automaticamente a cada 5 minutos. 
+                    O tempo médio de espera é uma estimativa baseada nos atendimentos recentes.
                   </p>
-                </div>
-                <div className="text-end">
-                  <small className="text-muted">
-                    <i className="bi bi-clock me-1"></i>
-                    Última atualização: {ultimaAtualizacao.toLocaleTimeString('pt-BR')}
-                  </small>
                 </div>
               </div>
             </Card.Body>
@@ -94,45 +54,59 @@ const FilasAtendimento = () => {
         </Col>
       </Row>
 
-      <Row className="g-4">
-        {filas.map(fila => {
-          const statusInfo = getStatusInfo(fila.pessoasNaFila);
-          
+      <Row>
+        {filas.map((fila) => {
+          const status = getFilaStatus(fila.aguardando);
+          const progress = calculateProgress(fila.atendidos, fila.aguardando);
+
           return (
-            <Col md={6} lg={4} key={fila.id}>
-              <Card className="h-100 shadow-sm">
-                <Card.Header className={`bg-${fila.statusCor} bg-opacity-10`}>
-                  <h5 className="mb-1">{fila.unidade}</h5>
+            <Col key={fila.id} md={6} lg={4} className="mb-4">
+              <Card className="h-100 shadow-sm hover-shadow">
+                <Card.Header className="bg-light">
+                  <h5 className="mb-0">{fila.unidade}</h5>
                   <small className="text-muted">{fila.tipo}</small>
                 </Card.Header>
                 <Card.Body>
-                  <div className="text-center mb-3">
-                    <div className="display-4 fw-bold text-primary">
-                      {fila.pessoasNaFila}
-                    </div>
-                    <p className="text-muted mb-0">pessoas na fila</p>
-                  </div>
-
                   <div className="mb-3">
-                    <div className="d-flex justify-content-between mb-1">
-                      <small>Nível de ocupação</small>
-                      <small><Badge bg={statusInfo.cor}>{statusInfo.nivel}</Badge></small>
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <span className="text-muted">Status da Fila:</span>
+                      <Badge bg={status.color}>
+                        {status.label}
+                      </Badge>
                     </div>
                     <ProgressBar 
-                      now={statusInfo.porcentagem} 
-                      variant={statusInfo.cor}
-                      animated
+                      variant={status.color} 
+                      now={progress} 
+                      className="mb-3"
+                      style={{ height: '8px' }}
                     />
                   </div>
 
-                  <div className="d-flex align-items-center justify-content-center bg-light rounded p-3">
-                    <i className="bi bi-clock text-primary me-2" style={{ fontSize: '1.5rem' }}></i>
-                    <div>
-                      <small className="text-muted d-block">Tempo estimado</small>
-                      <strong className="text-primary">{fila.tempoEstimado}</strong>
-                    </div>
-                  </div>
+                  <Row className="text-center">
+                    <Col xs={4}>
+                      <div className="p-2">
+                        <h3 className="mb-0 text-danger">{fila.aguardando}</h3>
+                        <small className="text-muted">Aguardando</small>
+                      </div>
+                    </Col>
+                    <Col xs={4}>
+                      <div className="p-2">
+                        <h3 className="mb-0 text-success">{fila.atendidos}</h3>
+                        <small className="text-muted">Atendidos</small>
+                      </div>
+                    </Col>
+                    <Col xs={4}>
+                      <div className="p-2">
+                        <h3 className="mb-0 text-info">{fila.tempoMedio}</h3>
+                        <small className="text-muted">Tempo Médio</small>
+                      </div>
+                    </Col>
+                  </Row>
                 </Card.Body>
+                <Card.Footer className="bg-light text-muted small">
+                  <i className="bi bi-clock-history me-1"></i>
+                  Atualizado há 2 minutos
+                </Card.Footer>
               </Card>
             </Col>
           );
@@ -141,18 +115,41 @@ const FilasAtendimento = () => {
 
       <Row className="mt-4">
         <Col>
-          <Card className="border-info">
+          <Card className="shadow-sm">
             <Card.Body>
               <h5>
-                <i className="bi bi-info-circle text-info me-2"></i>
-                Informações Importantes
+                <i className="bi bi-question-circle me-2"></i>
+                Como Funciona?
               </h5>
-              <ul className="mb-0">
-                <li>Os tempos são estimativas e podem variar conforme a complexidade dos atendimentos</li>
-                <li>Casos de emergência têm prioridade no atendimento</li>
-                <li>Chegue com antecedência para realizar seu cadastro na recepção</li>
-                <li>As informações são atualizadas automaticamente a cada 30 segundos</li>
-              </ul>
+              <Row className="mt-3">
+                <Col md={4}>
+                  <h6>
+                    <Badge bg="success" className="me-2">Baixa</Badge>
+                    Fila Baixa
+                  </h6>
+                  <p className="small text-muted">
+                    Até 5 pessoas aguardando. Tempo de espera geralmente menor que 30 minutos.
+                  </p>
+                </Col>
+                <Col md={4}>
+                  <h6>
+                    <Badge bg="warning" className="me-2">Moderada</Badge>
+                    Fila Moderada
+                  </h6>
+                  <p className="small text-muted">
+                    Entre 6 e 10 pessoas aguardando. Tempo de espera entre 30 e 60 minutos.
+                  </p>
+                </Col>
+                <Col md={4}>
+                  <h6>
+                    <Badge bg="danger" className="me-2">Alta</Badge>
+                    Fila Alta
+                  </h6>
+                  <p className="small text-muted">
+                    Mais de 10 pessoas aguardando. Tempo de espera pode ultrapassar 1 hora.
+                  </p>
+                </Col>
+              </Row>
             </Card.Body>
           </Card>
         </Col>
