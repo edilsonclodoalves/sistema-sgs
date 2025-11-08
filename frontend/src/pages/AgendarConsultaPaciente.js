@@ -86,9 +86,12 @@ const AgendarConsultaPaciente = () => {
       };
 
       console.log('Enviando dados da consulta:', dadosConsulta);
+      const response = await api.post('/consultas', dadosConsulta);
    
-      toast.success('Consulta agendada com sucesso!');
-      navigate('/paciente/consultas');
+      if (response.status === 201) {
+        toast.success('Consulta agendada com sucesso!');
+        navigate('/paciente/consultas');
+      }
       
     } catch (err) {
       console.error('Erro ao agendar:', err);

@@ -31,8 +31,8 @@ const PacienteDashboard = () => {
       const todasConsultas = response.data.consultas || [];
       const consultasFuturas = todasConsultas
         .filter(c => {
-          const dataConsulta = new Date(c.data_hora);
-          return dataConsulta >= new Date() && (c.status === 'AGENDADA' || c.status === 'CONFIRMADA');
+          // Mantém qualquer consulta com status AGENDADA ou CONFIRMADA
+          return c.status === 'AGENDADA' || c.status === 'CONFIRMADA';
         })
         .sort((a, b) => new Date(a.data_hora) - new Date(b.data_hora));
       

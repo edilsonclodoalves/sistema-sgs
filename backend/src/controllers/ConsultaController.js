@@ -53,6 +53,46 @@ class ConsultaController {
     }
   }
 
+  async show(req, res) {
+    try {
+      const { id } = req.params;
+
+      const consulta = await Consulta.findByPk(id, {
+        include: [
+          { model: Paciente, as: 'paciente', include: [{ model: Pessoa, as: 'pessoa' }] },
+          { model: Medico, as: 'medico', include: [{ model: Pessoa, as: 'pessoa' }] }
+        ]
+      });
+
+      if (!consulta) {
+        return res.status(404).json({ error: 'Consulta não encontrada' });
+      }
+
+      return res.json(consulta);
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
+  async byPaciente(req, res) {
+    try {
+      const { paciente_id } = req.params;
+
+      const consultas = await Consulta.findAll({
+        where: { paciente_id },
+        include: [
+          { model: Paciente, as: 'paciente', include: [{ model: Pessoa, as: 'pessoa' }] },
+          { model: Medico, as: 'medico', include: [{ model: Pessoa, as: 'pessoa' }] }
+        ],
+        order: [['data_hora', 'DESC']]
+      });
+
+      return res.json(consultas);
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
   async store(req, res) {
     try {
       const { paciente_id, medico_id, data_hora, tipo, observacoes } = req.body;
@@ -63,7 +103,6 @@ class ConsultaController {
         });
       }
 
-      // Verificar disponibilidade
       const dataHoraConsulta = new Date(data_hora);
       const consultaExistente = await Consulta.findOne({
         where: {
