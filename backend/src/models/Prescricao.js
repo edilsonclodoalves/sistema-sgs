@@ -17,6 +17,22 @@ Prescricao.init({
       key: 'id'
     }
   },
+  paciente_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'pacientes',
+      key: 'id'
+    }
+  },
+  medico_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'medicos',
+      key: 'id'
+    }
+  },
   medicamento: {
     type: DataTypes.STRING(255),
     allowNull: false

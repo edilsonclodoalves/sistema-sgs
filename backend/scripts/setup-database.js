@@ -6,7 +6,7 @@
  * Este script:
  * 1. Cria o banco de dados se não existir
  * 2. Cria todas as tabelas
- * 3. Insere dados iniciais (seed)
+ * 3. Insere dados iniciais (seed) incluindo histórico médico completo
  * 4. Valida a estrutura
  */
 
@@ -92,7 +92,7 @@ async function seedDatabase() {
   logSection('ETAPA 3: Inserindo Dados Iniciais');
   
   try {
-    const { Pessoa, Usuario, Medico, Paciente } = require('../src/models');
+    const { Pessoa, Usuario, Medico, Paciente, Consulta, Prontuario, Prescricao, Exame } = require('../src/models');
     
     // 1. Criar pessoa administrador
     log('Criando usuário administrador...', 'yellow');
@@ -116,7 +116,7 @@ async function seedDatabase() {
     const usuarioAdmin = await Usuario.create({
       pessoa_id: pessoaAdmin.id,
       email: 'admin@sgs.com',
-      senha: 'admin123', // Será hasheada automaticamente pelo hook
+      senha: 'admin123',
       perfil: 'ADMINISTRADOR',
       ativo: true
     });
@@ -158,8 +158,44 @@ async function seedDatabase() {
     });
     log('✓ Médico criado: joao.silva@sgs.com / medico123', 'green');
 
-    // 3. Criar paciente exemplo
-    log('\nCriando paciente exemplo...', 'yellow');
+    // 3. Criar segundo médico (Cardiologista)
+    log('\nCriando segundo médico (Cardiologista)...', 'yellow');
+    const pessoaMedico2 = await Pessoa.create({
+      cpf: '66666666666',
+      nome_completo: 'Dra. Ana Cardoso',
+      data_nascimento: '1988-03-20',
+      sexo: 'F',
+      email: 'ana.cardoso@sgs.com',
+      telefone: '31987777777',
+      celular: '31987777777',
+      cep: '30000000',
+      logradouro: 'Av. Saúde',
+      numero: '500',
+      bairro: 'Centro',
+      cidade: 'Pedro Leopoldo',
+      estado: 'MG',
+      ativo: true
+    });
+
+    const usuarioMedico2 = await Usuario.create({
+      pessoa_id: pessoaMedico2.id,
+      email: 'ana.cardoso@sgs.com',
+      senha: 'medico123',
+      perfil: 'MEDICO',
+      ativo: true
+    });
+
+    const medico2 = await Medico.create({
+      pessoa_id: pessoaMedico2.id,
+      crm: '654321',
+      crm_uf: 'MG',
+      especialidade: 'Cardiologia',
+      valor_consulta: 200.00
+    });
+    log('✓ Cardiologista criada: ana.cardoso@sgs.com / medico123', 'green');
+
+    // 4. Criar paciente Maria Santos
+    log('\nCriando paciente Maria Santos...', 'yellow');
     const pessoaPaciente = await Pessoa.create({
       cpf: '22222222222',
       nome_completo: 'Maria Santos',
@@ -177,11 +213,10 @@ async function seedDatabase() {
       ativo: true
     });
 
-    // ✅ Senha do paciente é a data de nascimento (será hasheada automaticamente)
     const usuarioPaciente = await Usuario.create({
       pessoa_id: pessoaPaciente.id,
       email: 'maria.santos@email.com',
-      senha: '1995-08-20', // Data de nascimento no formato YYYY-MM-DD
+      senha: '1995-08-20',
       perfil: 'PACIENTE',
       ativo: true
     });
@@ -194,7 +229,7 @@ async function seedDatabase() {
     });
     log('✓ Paciente criado: CPF 22222222222 / Data nascimento: 1995-08-20', 'green');
 
-    // 4. Criar recepcionista exemplo
+    // 5. Criar recepcionista exemplo
     log('\nCriando recepcionista exemplo...', 'yellow');
     const pessoaRecep = await Pessoa.create({
       cpf: '33333333333',
@@ -222,7 +257,7 @@ async function seedDatabase() {
     });
     log('✓ Recepcionista criado: ana.costa@sgs.com / recep123', 'green');
 
-    // 5. Criar mais pacientes exemplo
+    // 6. Criar mais pacientes exemplo
     log('\nCriando pacientes adicionais...', 'yellow');
     
     const pessoaPaciente2 = await Pessoa.create({
@@ -245,12 +280,12 @@ async function seedDatabase() {
     await Usuario.create({
       pessoa_id: pessoaPaciente2.id,
       email: 'carlos.oliveira@email.com',
-      senha: '1988-12-05', // Data de nascimento
+      senha: '1988-12-05',
       perfil: 'PACIENTE',
       ativo: true
     });
 
-    await Paciente.create({
+    const paciente2 = await Paciente.create({
       pessoa_id: pessoaPaciente2.id,
       numero_prontuario: 'PRON-000002',
       tipo_sanguineo: 'A+',
@@ -277,12 +312,12 @@ async function seedDatabase() {
     await Usuario.create({
       pessoa_id: pessoaPaciente3.id,
       email: 'fernanda.lima@email.com',
-      senha: '2000-06-15', // Data de nascimento
+      senha: '2000-06-15',
       perfil: 'PACIENTE',
       ativo: true
     });
 
-    await Paciente.create({
+    const paciente3 = await Paciente.create({
       pessoa_id: pessoaPaciente3.id,
       numero_prontuario: 'PRON-000003',
       tipo_sanguineo: 'B+',
@@ -290,9 +325,238 @@ async function seedDatabase() {
     
     log('✓ 3 pacientes criados com sucesso', 'green');
 
+    // ========================================
+    // HISTÓRICO MÉDICO - CONSULTAS REALIZADAS
+    // ========================================
+    log('\n📋 Criando histórico médico do paciente Maria Santos...', 'cyan');
+
+    // Consulta 1 - Consulta Clínica (3 meses atrás)
+    log('  ➤ Consulta 1 - Clínico Geral (3 meses atrás)...', 'yellow');
+    const dataConsulta1 = new Date();
+    dataConsulta1.setMonth(dataConsulta1.getMonth() - 3);
+    
+    const consulta1 = await Consulta.create({
+      paciente_id: paciente.id,
+      medico_id: medico.id,
+      data_hora: dataConsulta1,
+      duracao_minutos: 30,
+      tipo: 'CONSULTA',
+      status: 'REALIZADA',
+      observacoes: 'Paciente compareceu pontualmente. Consulta de rotina.',
+      valor: 150.00
+    });
+
+    const prontuario1 = await Prontuario.create({
+      consulta_id: consulta1.id,
+      paciente_id: paciente.id,
+      medico_id: medico.id,
+      queixa_principal: 'Dor de cabeça frequente e cansaço excessivo',
+      historia_doenca: 'Paciente relata cefaleia há 2 semanas, predominantemente vespertina. Nega febre, náuseas ou vômitos. Relata também cansaço excessivo mesmo após repouso adequado.',
+      exame_fisico: 'Paciente em bom estado geral, corado, hidratado, anictérico. PA: 130/85 mmHg, FC: 78 bpm, Tax: 36.5°C. Ausculta cardiopulmonar sem alterações. Abdome flácido, indolor à palpação.',
+      diagnostico: 'Cefaleia tensional e possível anemia',
+      cid: 'G44.2',
+      conduta: 'Solicitado hemograma completo. Prescrito analgésico para cefaleia. Orientações sobre hidratação e alimentação balanceada. Retorno em 15 dias com resultado dos exames.',
+      observacoes: 'Paciente orientada sobre sinais de alerta. Demonstrou boa compreensão das orientações.'
+    });
+
+    // Prescrições da Consulta 1
+    await Prescricao.create({
+      prontuario_id: prontuario1.id,
+      paciente_id: paciente.id,
+      medico_id: medico.id,
+      medicamento: 'Paracetamol',
+      dosagem: '750mg',
+      via_administracao: 'Oral',
+      frequencia: '8 em 8 horas',
+      duracao: '5 dias',
+      observacoes: 'Tomar após as refeições. Não exceder 3g por dia.'
+    });
+
+    await Prescricao.create({
+      prontuario_id: prontuario1.id,
+      paciente_id: paciente.id,
+      medico_id: medico.id,
+      medicamento: 'Sulfato Ferroso',
+      dosagem: '40mg',
+      via_administracao: 'Oral',
+      frequencia: '1 vez ao dia',
+      duracao: '30 dias',
+      observacoes: 'Tomar em jejum ou antes do café da manhã. Pode causar escurecimento das fezes.'
+    });
+
+    // Exame solicitado na Consulta 1
+    await Exame.create({
+      paciente_id: paciente.id,
+      medico_solicitante_id: medico.id,
+      tipo_exame: 'Hemograma Completo',
+      data_solicitacao: dataConsulta1,
+      data_realizacao: new Date(dataConsulta1.getTime() + 3 * 24 * 60 * 60 * 1000), // 3 dias depois
+      resultado: 'Hemácias: 3.8 milhões/mm³ (VR: 4.5-5.5), Hemoglobina: 10.2 g/dL (VR: 12-16), Hematócrito: 32% (VR: 36-48), Leucócitos: 7.200/mm³, Plaquetas: 280.000/mm³. Conclusão: Anemia leve.',
+      status: 'REALIZADO',
+      observacoes: 'Confirma anemia ferropriva leve'
+    });
+
+    log('    ✓ Consulta 1 criada com prontuário, 2 prescrições e 1 exame', 'green');
+
+    // Consulta 2 - Retorno (2 meses atrás)
+    log('  ➤ Consulta 2 - Retorno Clínico (2 meses atrás)...', 'yellow');
+    const dataConsulta2 = new Date();
+    dataConsulta2.setMonth(dataConsulta2.getMonth() - 2);
+    dataConsulta2.setDate(15);
+    
+    const consulta2 = await Consulta.create({
+      paciente_id: paciente.id,
+      medico_id: medico.id,
+      data_hora: dataConsulta2,
+      duracao_minutos: 20,
+      tipo: 'RETORNO',
+      status: 'REALIZADA',
+      observacoes: 'Retorno para avaliação de exames e resposta ao tratamento',
+      valor: 100.00
+    });
+
+    const prontuario2 = await Prontuario.create({
+      consulta_id: consulta2.id,
+      paciente_id: paciente.id,
+      medico_id: medico.id,
+      queixa_principal: 'Retorno - avaliação de tratamento',
+      historia_doenca: 'Paciente retorna para avaliação. Relata melhora significativa da cefaleia após início do tratamento. Ainda apresenta cansaço, porém menos intenso.',
+      exame_fisico: 'BEG, corada+/4, hidratada, anictérica. PA: 125/80 mmHg, FC: 72 bpm. Exame cardiovascular e respiratório sem alterações.',
+      diagnostico: 'Anemia ferropriva em tratamento - boa resposta',
+      cid: 'D50.9',
+      conduta: 'Manter sulfato ferroso por mais 60 dias. Orientada dieta rica em ferro. Solicitar novo hemograma de controle em 2 meses.',
+      observacoes: 'Paciente aderente ao tratamento. Orientações reforçadas.'
+    });
+
+    await Prescricao.create({
+      prontuario_id: prontuario2.id,
+      paciente_id: paciente.id,
+      medico_id: medico.id,
+      medicamento: 'Sulfato Ferroso',
+      dosagem: '40mg',
+      via_administracao: 'Oral',
+      frequencia: '1 vez ao dia',
+      duracao: '60 dias',
+      observacoes: 'Continuar tratamento. Tomar preferencialmente em jejum.'
+    });
+
+    log('    ✓ Consulta 2 criada com prontuário e 1 prescrição', 'green');
+
+    // Consulta 3 - Cardiologia (1 mês atrás)
+    log('  ➤ Consulta 3 - Cardiologia (1 mês atrás)...', 'yellow');
+    const dataConsulta3 = new Date();
+    dataConsulta3.setMonth(dataConsulta3.getMonth() - 1);
+    
+    const consulta3 = await Consulta.create({
+      paciente_id: paciente.id,
+      medico_id: medico2.id,
+      data_hora: dataConsulta3,
+      duracao_minutos: 40,
+      tipo: 'CONSULTA',
+      status: 'REALIZADA',
+      observacoes: 'Primeira consulta cardiológica - avaliação preventiva',
+      valor: 200.00
+    });
+
+    const prontuario3 = await Prontuario.create({
+      consulta_id: consulta3.id,
+      paciente_id: paciente.id,
+      medico_id: medico2.id,
+      queixa_principal: 'Avaliação cardiológica preventiva',
+      historia_doenca: 'Paciente encaminhada pelo clínico geral para avaliação cardiológica devido a PA limítrofe. Nega dor precordial, palpitações ou dispneia. Sedentária. História familiar positiva para HAS (mãe e avô).',
+      exame_fisico: 'PA: 135/88 mmHg (confirmada após repouso), FC: 76 bpm regular, ausculta cardíaca: ritmo regular em 2 tempos, bulhas normofonéticas, sem sopros. Pulsos periféricos palpáveis e simétricos.',
+      diagnostico: 'Pré-hipertensão arterial',
+      cid: 'R03.0',
+      conduta: 'Solicitado ECG, Ecocardiograma e MAPA 24h. Orientações sobre mudanças no estilo de vida: atividade física regular, dieta hipossódica, controle de peso. Retorno com exames.',
+      observacoes: 'Paciente bem orientada. Demonstrou preocupação adequada e motivação para mudanças.'
+    });
+
+    // Exames solicitados na Consulta 3
+    await Exame.create({
+      paciente_id: paciente.id,
+      medico_solicitante_id: medico2.id,
+      tipo_exame: 'Eletrocardiograma (ECG)',
+      data_solicitacao: dataConsulta3,
+      data_realizacao: new Date(dataConsulta3.getTime() + 5 * 24 * 60 * 60 * 1000),
+      resultado: 'Ritmo sinusal. FC: 72 bpm. ÂQRS: +60°. PR: 0.16s. QRS: 0.08s. QT: 0.38s. Sem alterações de repolarização ventricular. Conclusão: ECG normal.',
+      status: 'REALIZADO',
+      observacoes: 'Exame sem alterações significativas'
+    });
+
+    await Exame.create({
+      paciente_id: paciente.id,
+      medico_solicitante_id: medico2.id,
+      tipo_exame: 'Ecocardiograma',
+      data_solicitacao: dataConsulta3,
+      data_realizacao: new Date(dataConsulta3.getTime() + 10 * 24 * 60 * 60 * 1000),
+      resultado: 'Átrio esquerdo: 34mm. Ventrículo esquerdo: 48mm (diástole). Fração de ejeção: 65%. Valvas: sem alterações morfológicas. Sem sinais de hipertrofia ventricular. Conclusão: Ecocardiograma dentro dos limites da normalidade.',
+      status: 'REALIZADO',
+      observacoes: 'Função sistólica preservada'
+    });
+
+    await Exame.create({
+      paciente_id: paciente.id,
+      medico_solicitante_id: medico2.id,
+      tipo_exame: 'MAPA 24 horas',
+      data_solicitacao: dataConsulta3,
+      status: 'AGENDADO',
+      observacoes: 'Agendado para a próxima semana'
+    });
+
+    log('    ✓ Consulta 3 criada com prontuário e 3 exames', 'green');
+
+    // ========================================
+    // HISTÓRICO MÉDICO - Paciente Carlos (menos dados)
+    // ========================================
+    log('\n📋 Criando histórico médico do paciente Carlos Oliveira...', 'cyan');
+
+    const dataConsultaCarlos = new Date();
+    dataConsultaCarlos.setMonth(dataConsultaCarlos.getMonth() - 1);
+    dataConsultaCarlos.setDate(10);
+
+    const consultaCarlos = await Consulta.create({
+      paciente_id: paciente2.id,
+      medico_id: medico.id,
+      data_hora: dataConsultaCarlos,
+      duracao_minutos: 30,
+      tipo: 'CONSULTA',
+      status: 'REALIZADA',
+      observacoes: 'Consulta de rotina',
+      valor: 150.00
+    });
+
+    const prontuarioCarlos = await Prontuario.create({
+      consulta_id: consultaCarlos.id,
+      paciente_id: paciente2.id,
+      medico_id: medico.id,
+      queixa_principal: 'Check-up anual',
+      historia_doenca: 'Paciente assintomático, comparece para check-up de rotina. Nega queixas. Pratica atividade física regularmente.',
+      exame_fisico: 'BEG, PA: 120/75 mmHg, FC: 68 bpm, Tax: 36.3°C. Exames físico geral e segmentar sem alterações.',
+      diagnostico: 'Paciente hígido',
+      cid: 'Z00.0',
+      conduta: 'Solicitados exames de rotina: hemograma, glicemia, colesterol total e frações. Manter hábitos saudáveis.',
+      observacoes: 'Paciente em ótimas condições gerais'
+    });
+
+    await Exame.create({
+      paciente_id: paciente2.id,
+      medico_solicitante_id: medico.id,
+      tipo_exame: 'Hemograma + Glicemia + Perfil Lipídico',
+      data_solicitacao: dataConsultaCarlos,
+      status: 'SOLICITADO',
+      observacoes: 'Exames de rotina - check-up anual'
+    });
+
+    log('    ✓ Consulta criada para Carlos com prontuário e 1 exame', 'green');
+
+    log('\n✅ Histórico médico completo criado com sucesso!', 'green');
+    log('   • Maria Santos: 3 consultas, 3 prontuários, 4 prescrições, 4 exames', 'cyan');
+    log('   • Carlos Oliveira: 1 consulta, 1 prontuário, 0 prescrições, 1 exame', 'cyan');
+
     return true;
   } catch (error) {
     log(`✗ Erro ao inserir dados iniciais: ${error.message}`, 'red');
+    console.error(error);
     throw error;
   }
 }
@@ -301,20 +565,26 @@ async function validateDatabase() {
   logSection('ETAPA 4: Validando Estrutura do Banco');
   
   try {
-    const { Pessoa, Usuario, Medico, Paciente, Consulta } = require('../src/models');
+    const { Pessoa, Usuario, Medico, Paciente, Consulta, Prontuario, Prescricao, Exame } = require('../src/models');
     
     const pessoas = await Pessoa.count();
     const usuarios = await Usuario.count();
     const medicos = await Medico.count();
     const pacientes = await Paciente.count();
     const consultas = await Consulta.count();
+    const prontuarios = await Prontuario.count();
+    const prescricoes = await Prescricao.count();
+    const exames = await Exame.count();
     
     log('📊 Estatísticas do banco:', 'blue');
     log(`   Pessoas cadastradas: ${pessoas}`, 'green');
     log(`   Usuários cadastrados: ${usuarios}`, 'green');
     log(`   Médicos cadastrados: ${medicos}`, 'green');
     log(`   Pacientes cadastrados: ${pacientes}`, 'green');
-    log(`   Consultas agendadas: ${consultas}`, 'green');
+    log(`   Consultas realizadas: ${consultas}`, 'green');
+    log(`   Prontuários preenchidos: ${prontuarios}`, 'green');
+    log(`   Prescrições emitidas: ${prescricoes}`, 'green');
+    log(`   Exames registrados: ${exames}`, 'green');
     
     return true;
   } catch (error) {
@@ -327,7 +597,7 @@ async function main() {
   console.clear();
   console.log('\n' + '╔' + '═'.repeat(68) + '╗');
   console.log('║' + ' '.repeat(68) + '║');
-  log('║     🏥 SETUP COMPLETO DO BANCO DE DADOS - SGS v1.0              ║', 'cyan');
+  log('║     🏥 SETUP COMPLETO DO BANCO DE DADOS - SGS v2.0              ║', 'cyan');
   console.log('║' + ' '.repeat(68) + '║');
   console.log('╚' + '═'.repeat(68) + '╝\n');
 
@@ -349,10 +619,14 @@ async function main() {
     log('   Email: admin@sgs.com', 'green');
     log('   Senha: admin123', 'green');
     
-    log('\n👨‍⚕️ MÉDICO:', 'cyan');
+    log('\n👨‍⚕️ MÉDICOS:', 'cyan');
     log('   Rota: POST /api/auth/login', 'yellow');
-    log('   Email: joao.silva@sgs.com', 'green');
-    log('   Senha: medico123', 'green');
+    log('   1) Dr. João Silva (Clínico Geral):', 'blue');
+    log('      Email: joao.silva@sgs.com', 'green');
+    log('      Senha: medico123', 'green');
+    log('   2) Dra. Ana Cardoso (Cardiologia):', 'blue');
+    log('      Email: ana.cardoso@sgs.com', 'green');
+    log('      Senha: medico123', 'green');
     
     log('\n📋 RECEPCIONISTA:', 'cyan');
     log('   Rota: POST /api/auth/login', 'yellow');
@@ -361,20 +635,27 @@ async function main() {
     
     log('\n🏥 PACIENTES:', 'cyan');
     log('   Rota: POST /api/auth/login-paciente', 'yellow');
-    log('\n   Paciente 1 - Maria Santos:', 'blue');
+    log('\n   Paciente 1 - Maria Santos (COM HISTÓRICO COMPLETO):', 'blue');
     log('   CPF: 22222222222', 'green');
     log('   Data de Nascimento: 1995-08-20', 'green');
+    log('   • 3 consultas realizadas', 'yellow');
+    log('   • 4 prescrições registradas', 'yellow');
+    log('   • 4 exames (3 realizados, 1 agendado)', 'yellow');
     log('\n   Paciente 2 - Carlos Oliveira:', 'blue');
     log('   CPF: 44444444444', 'green');
     log('   Data de Nascimento: 1988-12-05', 'green');
+    log('   • 1 consulta realizada', 'yellow');
+    log('   • 1 exame solicitado', 'yellow');
     log('\n   Paciente 3 - Fernanda Lima:', 'blue');
     log('   CPF: 55555555555', 'green');
     log('   Data de Nascimento: 2000-06-15', 'green');
+    log('   • Sem histórico médico', 'yellow');
     
     log('\n📝 Observações Importantes:', 'yellow');
     log('   • Usuários do sistema (admin, médico, recepcionista) usam /api/auth/login', 'yellow');
     log('   • Pacientes usam /api/auth/login-paciente com CPF e data de nascimento', 'yellow');
     log('   • A senha do paciente é sempre a data de nascimento no formato YYYY-MM-DD', 'yellow');
+    log('   • Maria Santos tem histórico médico completo para testes', 'yellow');
     
     log('\n🚀 Próximo passo: Execute "npm run dev" para iniciar o servidor\n', 'blue');
     

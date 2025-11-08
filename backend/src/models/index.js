@@ -37,6 +37,14 @@ Prontuario.belongsTo(Medico, { foreignKey: 'medico_id', as: 'medico' });
 Prontuario.hasMany(Prescricao, { foreignKey: 'prontuario_id', as: 'prescricoes' });
 Prescricao.belongsTo(Prontuario, { foreignKey: 'prontuario_id', as: 'prontuario' });
 
+// Relacionamentos Paciente <-> Prescricao
+Paciente.hasMany(Prescricao, { foreignKey: 'paciente_id', as: 'prescricoes' });
+Prescricao.belongsTo(Paciente, { foreignKey: 'paciente_id', as: 'paciente' });
+
+// Relacionamentos Medico <-> Prescricao
+Medico.hasMany(Prescricao, { foreignKey: 'medico_id', as: 'prescricoes' });
+Prescricao.belongsTo(Medico, { foreignKey: 'medico_id', as: 'medico' });
+
 Paciente.hasMany(Exame, { foreignKey: 'paciente_id', as: 'exames' });
 Exame.belongsTo(Paciente, { foreignKey: 'paciente_id', as: 'paciente' });
 
