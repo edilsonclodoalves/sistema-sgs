@@ -3,21 +3,46 @@ const router = express.Router();
 const PrescricaoController = require('../controllers/PrescricaoController');
 const { auth, authorize } = require('../middlewares/auth');
 
-// Rotas de prescrições
-// IMPORTANTE: Rotas específicas devem vir ANTES das rotas genéricas com parâmetros
-
-// Rota específica para listar todas (deve vir antes de /:id)
-router.get('/', auth, PrescricaoController.index);
-
-// Rota específica para buscar prescrições de um paciente
+/**
+ * @route GET /api/prescricao/paciente/:paciente_id
+ * @desc Listar prescrições por paciente
+ * @access Private
+ */
 router.get('/paciente/:paciente_id', auth, PrescricaoController.prescricoesPaciente);
 
-// Rota genérica com parâmetro (deve vir por último entre os GETs)
+/**
+ * @route GET /api/prescricao/:id
+ * @desc Mostrar prescrição específica
+ * @access Private
+ */
 router.get('/:id', auth, PrescricaoController.show);
 
-// Rotas de modificação
+/**
+ * @route GET /api/prescricao
+ * @desc Listar todas as prescrições
+ * @access Private
+ */
+router.get('/', auth, PrescricaoController.index);
+
+/**
+ * @route POST /api/prescricao
+ * @desc Criar nova prescrição
+ * @access Private (ADMINISTRADOR, MEDICO)
+ */
 router.post('/', auth, authorize('ADMINISTRADOR', 'MEDICO'), PrescricaoController.store);
+
+/**
+ * @route PUT /api/prescricao/:id
+ * @desc Atualizar prescrição
+ * @access Private (ADMINISTRADOR, MEDICO)
+ */
 router.put('/:id', auth, authorize('ADMINISTRADOR', 'MEDICO'), PrescricaoController.update);
+
+/**
+ * @route DELETE /api/prescricao/:id
+ * @desc Deletar prescrição
+ * @access Private (ADMINISTRADOR, MEDICO)
+ */
 router.delete('/:id', auth, authorize('ADMINISTRADOR', 'MEDICO'), PrescricaoController.destroy);
 
 module.exports = router;
