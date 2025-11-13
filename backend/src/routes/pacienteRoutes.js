@@ -4,68 +4,45 @@ const PacienteController = require('../controllers/PacienteController');
 const { auth, authorize } = require('../middlewares/auth');
 
 /**
- * @route GET /api/pacientes
+ * @route GET /api/paciente/:id/historico
+ * @desc Listar histórico do paciente
+ * @access Private
+ */
+router.get('/:id/historico', auth, PacienteController.historico);
+
+/**
+ * @route GET /api/paciente/:id
+ * @desc Mostrar paciente específico
+ * @access Private
+ */
+router.get('/:id', auth, PacienteController.show);
+
+/**
+ * @route GET /api/paciente
  * @desc Listar todos os pacientes
- * @access Private (ADMINISTRADOR, MEDICO, RECEPCIONISTA)
+ * @access Private
  */
-router.get('/', 
-  auth, 
-  authorize('ADMINISTRADOR', 'MEDICO', 'RECEPCIONISTA'),
-  PacienteController.index
-);
+router.get('/', auth, PacienteController.index);
 
 /**
- * @route GET /api/pacientes/:id
- * @desc Buscar paciente por ID
- * @access Private (ADMINISTRADOR, MEDICO, RECEPCIONISTA, próprio PACIENTE)
- */
-router.get('/:id', 
-  auth,
-  PacienteController.show
-);
-
-/**
- * @route POST /api/pacientes
+ * @route POST /api/paciente
  * @desc Criar novo paciente
- * @access Private (ADMINISTRADOR, RECEPCIONISTA)
+ * @access Private (ADMINISTRADOR, MEDICO)
  */
-router.post('/',
-  auth,
-  authorize('ADMINISTRADOR', 'RECEPCIONISTA'),
-  PacienteController.store
-);
+router.post('/', auth, authorize('ADMINISTRADOR', 'MEDICO'), PacienteController.store);
 
 /**
- * @route PUT /api/pacientes/:id
+ * @route PUT /api/paciente/:id
  * @desc Atualizar paciente
- * @access Private (ADMINISTRADOR, RECEPCIONISTA)
+ * @access Private (ADMINISTRADOR, MEDICO)
  */
-router.put('/:id',
-  auth,
-  authorize('ADMINISTRADOR', 'RECEPCIONISTA', 'PACIENTE'),
-  PacienteController.update
-);
+router.put('/:id', auth, authorize('ADMINISTRADOR', 'MEDICO'), PacienteController.update);
 
 /**
- * @route DELETE /api/pacientes/:id
- * @desc Desativar paciente
+ * @route DELETE /api/paciente/:id
+ * @desc Deletar paciente
  * @access Private (ADMINISTRADOR)
  */
-router.delete('/:id',
-  auth,
-  authorize('ADMINISTRADOR'),
-  PacienteController.destroy
-);
-
-/**
- * @route GET /api/pacientes/:id/historico
- * @desc Histórico médico do paciente
- * @access Private (ADMINISTRADOR, MEDICO, próprio PACIENTE)
- */
-router.get('/:id/historico',
-  auth,
-  authorize('ADMINISTRADOR', 'MEDICO', 'PACIENTE'),
-  PacienteController.historico
-);
+router.delete('/:id', auth, authorize('ADMINISTRADOR'), PacienteController.destroy);
 
 module.exports = router;

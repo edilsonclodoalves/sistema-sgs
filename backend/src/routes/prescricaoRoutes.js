@@ -1,195 +1,48 @@
 const express = require('express');
 const router = express.Router();
-const { Prescricao, Prontuario, Paciente, Medico, Pessoa } = require('../models');
+const PrescricaoController = require('../controllers/PrescricaoController');
 const { auth, authorize } = require('../middlewares/auth');
 
-// Listar prescrições
-router.get('/', auth, async (req, res) => {
-  try {
-    const { page = 1, limit = 10, prontuario_id } = req.query;
-    const offset = (page - 1) * limit;
-    const where = {};
+/**
+ * @route GET /api/prescricao/paciente/:paciente_id
+ * @desc Listar prescrições por paciente
+ * @access Private
+ */
+router.get('/paciente/:paciente_id', auth, PrescricaoController.prescricoesPaciente);
 
-    if (prontuario_id) where.prontuario_id = prontuario_id;
+/**
+ * @route GET /api/prescricao/:id
+ * @desc Mostrar prescrição específica
+ * @access Private
+ */
+router.get('/:id', auth, PrescricaoController.show);
 
-    const { count, rows: prescricoes } = await Prescricao.findAndCountAll({
-      where,
-      include: [{
-        model: Prontuario,
-        as: 'prontuario',
-        include: [
-          {
-            model: Paciente,
-            as: 'paciente',
-            include: [{ model: Pessoa, as: 'pessoa' }]
-          },
-          {
-            model: Medico,
-            as: 'medico',
-            include: [{ model: Pessoa, as: 'pessoa' }]
-          }
-        ]
-      }],
-      limit: parseInt(limit),
-      offset: parseInt(offset),
-      order: [['createdAt', 'DESC']]
-    });
+/**
+ * @route GET /api/prescricao
+ * @desc Listar todas as prescrições
+ * @access Private
+ */
+router.get('/', auth, PrescricaoController.index);
 
-    return res.json({
-      prescricoes,
-      pagination: {
-        total: count,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        totalPages: Math.ceil(count / limit)
-      }
-    });
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
-  }
-});
+/**
+ * @route POST /api/prescricao
+ * @desc Criar nova prescrição
+ * @access Private (ADMINISTRADOR, MEDICO)
+ */
+router.post('/', auth, authorize('ADMINISTRADOR', 'MEDICO'), PrescricaoController.store);
 
-// Buscar prescrição por ID
-router.get('/:id', auth, async (req, res) => {
-  try {
-    const prescricao = await Prescricao.findByPk(req.params.id, {
-      include: [{
-        model: Prontuario,
-        as: 'prontuario',
-        include: [
-          {
-            model: Paciente,
-            as: 'paciente',
-            include: [{ model: Pessoa, as: 'pessoa' }]
-          },
-          {
-            model: Medico,
-            as: 'medico',
-            include: [{ model: Pessoa, as: 'pessoa' }]
-          }
-        ]
-      }]
-    });
+/**
+ * @route PUT /api/prescricao/:id
+ * @desc Atualizar prescrição
+ * @access Private (ADMINISTRADOR, MEDICO)
+ */
+router.put('/:id', auth, authorize('ADMINISTRADOR', 'MEDICO'), PrescricaoController.update);
 
-    if (!prescricao) {
-      return res.status(404).json({ error: 'Prescrição não encontrada' });
-    }
-
-    return res.json({ prescricao });
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
-  }
-});
-
-// Criar prescrição
-router.post('/', auth, authorize('MEDICO', 'ADMINISTRADOR'), async (req, res) => {
-  try {
-    const {
-      prontuario_id, medicamento, dosagem, via_administracao,
-      frequencia, duracao, observacoes
-    } = req.body;
-
-    if (!prontuario_id || !medicamento || !dosagem || !frequencia || !duracao) {
-      return res.status(400).json({
-        error: 'Dados incompletos',
-        message: 'Prontuário, medicamento, dosagem, frequência e duração são obrigatórios'
-      });
-    }
-
-    const prescricao = await Prescricao.create({
-      prontuario_id,
-      medicamento,
-      dosagem,
-      via_administracao,
-      frequencia,
-      duracao,
-      observacoes
-    });
-
-    const prescricaoCriada = await Prescricao.findByPk(prescricao.id, {
-      include: [{
-        model: Prontuario,
-        as: 'prontuario',
-        include: [
-          {
-            model: Paciente,
-            as: 'paciente',
-            include: [{ model: Pessoa, as: 'pessoa' }]
-          },
-          {
-            model: Medico,
-            as: 'medico',
-            include: [{ model: Pessoa, as: 'pessoa' }]
-          }
-        ]
-      }]
-    });
-
-    return res.status(201).json({
-      message: 'Prescrição criada com sucesso',
-      prescricao: prescricaoCriada
-    });
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
-  }
-});
-
-// Atualizar prescrição
-router.put('/:id', auth, authorize('MEDICO', 'ADMINISTRADOR'), async (req, res) => {
-  try {
-    const prescricao = await Prescricao.findByPk(req.params.id);
-
-    if (!prescricao) {
-      return res.status(404).json({ error: 'Prescrição não encontrada' });
-    }
-
-    await prescricao.update(req.body);
-
-    const prescricaoAtualizada = await Prescricao.findByPk(req.params.id, {
-      include: [{
-        model: Prontuario,
-        as: 'prontuario'
-      }]
-    });
-
-    return res.json({
-      message: 'Prescrição atualizada',
-      prescricao: prescricaoAtualizada
-    });
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
-  }
-});
-
-// Deletar prescrição
-router.delete('/:id', auth, authorize('MEDICO', 'ADMINISTRADOR'), async (req, res) => {
-  try {
-    const prescricao = await Prescricao.findByPk(req.params.id);
-
-    if (!prescricao) {
-      return res.status(404).json({ error: 'Prescrição não encontrada' });
-    }
-
-    await prescricao.destroy();
-
-    return res.json({ message: 'Prescrição deletada com sucesso' });
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
-  }
-});
-
-// Prescrições de um prontuário
-router.get('/prontuario/:prontuario_id', auth, async (req, res) => {
-  try {
-    const prescricoes = await Prescricao.findAll({
-      where: { prontuario_id: req.params.prontuario_id },
-      order: [['createdAt', 'DESC']]
-    });
-
-    return res.json({ prescricoes });
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
-  }
-});
+/**
+ * @route DELETE /api/prescricao/:id
+ * @desc Deletar prescrição
+ * @access Private (ADMINISTRADOR, MEDICO)
+ */
+router.delete('/:id', auth, authorize('ADMINISTRADOR', 'MEDICO'), PrescricaoController.destroy);
 
 module.exports = router;
