@@ -28,15 +28,26 @@ export const AuthProvider = ({ children }) => {
         data_nascimento: dataNascimento
       });
 
-      const { token, usuario, perfil } = response.data;
+      const { token, usuario, paciente, perfil } = response.data;
+
+      // Montar objeto completo do usuário incluindo dados do paciente
+      const userData = {
+        ...usuario,
+        perfil: perfil || usuario.perfil,
+        // Adicionar ID e dados do paciente
+        ...(paciente && {
+          paciente_id: paciente.id,
+          paciente: paciente
+        })
+      };
 
       localStorage.setItem('@SaudeSistema:token', token);
-      localStorage.setItem('@SaudeSistema:user', JSON.stringify({ ...usuario, perfil }));
+      localStorage.setItem('@SaudeSistema:user', JSON.stringify(userData));
       
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setUser({ ...usuario, perfil });
+      setUser(userData);
 
-      return { success: true, perfil };
+      return { success: true, perfil: userData.perfil };
     } catch (error) {
       return {
         success: false,
@@ -53,15 +64,31 @@ export const AuthProvider = ({ children }) => {
         senha
       });
 
-      const { token, usuario, perfil } = response.data;
+      const { token, usuario, paciente, medico, perfil } = response.data;
+
+      // Montar objeto completo do usuário incluindo dados específicos do perfil
+      const userData = {
+        ...usuario,
+        perfil: perfil || usuario.perfil,
+        // Adicionar ID e dados do paciente se for PACIENTE
+        ...(paciente && {
+          paciente_id: paciente.id,
+          paciente: paciente
+        }),
+        // Adicionar ID e dados do médico se for MEDICO
+        ...(medico && {
+          medico_id: medico.id,
+          medico: medico
+        })
+      };
 
       localStorage.setItem('@SaudeSistema:token', token);
-      localStorage.setItem('@SaudeSistema:user', JSON.stringify({ ...usuario, perfil }));
+      localStorage.setItem('@SaudeSistema:user', JSON.stringify(userData));
       
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setUser({ ...usuario, perfil });
+      setUser(userData);
 
-      return { success: true, perfil };
+      return { success: true, perfil: userData.perfil };
     } catch (error) {
       return {
         success: false,
@@ -75,6 +102,17 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('@SaudeSistema:user');
     api.defaults.headers.common['Authorization'] = '';
     setUser(null);
+  };
+
+  // Atualizar dados do usuário
+  const updateUser = (newData) => {
+    const updatedUser = {
+      ...user,
+      ...newData
+    };
+    
+    setUser(updatedUser);
+    localStorage.setItem('@SaudeSistema:user', JSON.stringify(updatedUser));
   };
 
   // Verifica se o usuário tem um perfil específico
@@ -92,6 +130,36 @@ export const AuthProvider = ({ children }) => {
   // Verifica se é paciente
   const isPaciente = () => hasRole('PACIENTE');
 
+  // Verifica se é médico
+  const isMedico = () => hasRole('MEDICO');
+
+  // Verifica se é recepcionista
+  const isRecepcionista = () => hasRole('RECEPCIONISTA');
+
+  // Retorna o ID do paciente se o usuário for paciente
+  const getPacienteId = () => {
+    if (!user || !isPaciente()) return null;
+    return user.paciente_id || user.paciente?.id || null;
+  };
+
+  // Retorna o ID do médico se o usuário for médico
+  const getMedicoId = () => {
+    if (!user || !isMedico()) return null;
+    return user.medico_id || user.medico?.id || null;
+  };
+
+  // Retorna dados do paciente
+  const getPacienteData = () => {
+    if (!user || !isPaciente()) return null;
+    return user.paciente || null;
+  };
+
+  // Retorna dados do médico
+  const getMedicoData = () => {
+    if (!user || !isMedico()) return null;
+    return user.medico || null;
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -99,9 +167,17 @@ export const AuthProvider = ({ children }) => {
       loginPaciente,
       loginUsuario,
       logout,
+      updateUser,
       hasRole,
       isAdmin,
-      isPaciente
+      isPaciente,
+      isMedico,
+      isRecepcionista,
+      getPacienteId,
+      getMedicoId,
+      getPacienteData,
+      getMedicoData,
+      signed: !!user
     }}>
       {children}
     </AuthContext.Provider>
