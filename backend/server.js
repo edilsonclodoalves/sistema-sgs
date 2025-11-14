@@ -35,51 +35,51 @@ app.use((req, res, next) => {
 // Rotas básicas (carregar apenas as que existem)
 try {
   app.use('/api/auth', require('./src/routes/authRoutes'));
-  console.log('✓ Rotas de autenticação carregadas');
+  console.log('Rotas de autenticação carregadas');
 } catch (err) {
-  console.log('⚠ Rotas de autenticação não encontradas');
+  console.log('Rotas de autenticação não encontradas');
 }
 
 try {
   app.use('/api/pacientes', require('./src/routes/pacienteRoutes'));
-  console.log('✓ Rotas de pacientes carregadas');
+  console.log('Rotas de pacientes carregadas');
 } catch (err) {
-  console.log('⚠ Rotas de pacientes não encontradas');
+  console.log('Rotas de pacientes não encontradas');
 }
 
 try {
   app.use('/api/medicos', require('./src/routes/medicoRoutes'));
-  console.log('✓ Rotas de médicos carregadas');
+  console.log('Rotas de médicos carregadas');
 } catch (err) {
-  console.log('⚠ Rotas de médicos não encontradas');
+  console.log('Rotas de médicos não encontradas');
 }
 
 try {
   app.use('/api/consultas', require('./src/routes/consultaRoutes'));
-  console.log('✓ Rotas de consultas carregadas');
+  console.log('Rotas de consultas carregadas');
 } catch (err) {
-  console.log('⚠ Rotas de consultas não encontradas');
+  console.log('Rotas de consultas não encontradas');
 }
 
 try {
   app.use('/api/prontuarios', require('./src/routes/prontuarioRoutes'));
-  console.log('✓ Rotas de prontuários carregadas');
+  console.log('Rotas de prontuários carregadas');
 } catch (err) {
-  console.log('⚠ Rotas de prontuários não encontradas');
+  console.log('Rotas de prontuários não encontradas');
 }
 
 try {
   app.use('/api/exames', require('./src/routes/exameRoutes'));
-  console.log('✓ Rotas de exames carregadas');
+  console.log('Rotas de exames carregadas');
 } catch (err) {
-  console.log('⚠ Rotas de exames não encontradas');
+  console.log('Rotas de exames não encontradas');
 }
 
 try {
   app.use('/api/prescricoes', require('./src/routes/prescricaoRoutes'));
-  console.log('✓ Rotas de prescrições carregadas');
+  console.log('Rotas de prescrições carregadas');
 } catch (err) {
-  console.log('⚠ Rotas de prescrições não encontradas');
+  console.log('Rotas de prescrições não encontradas');
 }
 
 // Rota de health check
@@ -139,34 +139,34 @@ const HOST = process.env.HOST || 'localhost';
 
 const startServer = async () => {
   try {
-    console.log('\n🚀 Iniciando SGS - Sistema de Gestão de Saúde...\n');
+    console.log('\nIniciando SGS - Sistema de Gestão de Saúde...\n');
     
     // Testa conexão com banco de dados
     await sequelize.authenticate();
-    console.log('✓ Conexão com banco de dados estabelecida com sucesso');
+    console.log('Conexão com banco de dados estabelecida com sucesso');
     
     // Sincroniza modelos (apenas em desenvolvimento)
     if (process.env.NODE_ENV === 'development') {
-      console.log('✓ Modelos carregados e prontos');
+      console.log('Modelos carregados e prontos');
     }
     
     // Inicia servidor
     app.listen(PORT, HOST, () => {
-      console.log('\n═══════════════════════════════════════════════════');
-      console.log(`✓ Servidor rodando em http://${HOST}:${PORT}`);
-      console.log(`✓ Ambiente: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`✓ Health check: http://${HOST}:${PORT}/health`);
-      console.log('═══════════════════════════════════════════════════\n');
+      console.log('\n===================================================');
+      console.log(`Servidor rodando em http://${HOST}:${PORT}`);
+      console.log(`Ambiente: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`Health check: http://${HOST}:${PORT}/health`);
+      console.log('===================================================\n');
     });
     
   } catch (error) {
-    console.error('\n✗ Erro ao iniciar servidor:');
+    console.error('\nErro ao iniciar servidor:');
     console.error(`  ${error.message}\n`);
     console.error('Verificações:');
-    console.error('  □ MySQL está rodando?');
-    console.error('  □ Credenciais no .env estão corretas?');
-    console.error('  □ Banco "sgs_clinica" foi criado?');
-    console.error('  □ Modelos foram copiados corretamente?\n');
+    console.error('  - MySQL está rodando?');
+    console.error('  - Credenciais no .env estão corretas?');
+    console.error('  - Banco "sgs_clinica" foi criado?');
+    console.error('  - Modelos foram copiados corretamente?\n');
     process.exit(1);
   }
 };
