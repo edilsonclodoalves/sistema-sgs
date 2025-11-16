@@ -1,8 +1,8 @@
-# 🏥 SGS – Sistema de Gestão de Saúde (Frontend + Backend)
+# 🏥 SGS – Sistema de Gestão de Saúde (Frontend + Backend) 
 
 Plataforma completa para gerenciamento de serviços de saúde, incluindo API backend, portal web para pacientes e módulos administrativos. Desenvolvido como parte do **Projeto A3 – Gestão de Qualidade de Software (Ecossistema Ânima – LIVE)**.
 
----
+----
 
 # 📚 **Sumário**
 
