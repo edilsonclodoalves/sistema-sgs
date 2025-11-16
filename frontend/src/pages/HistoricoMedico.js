@@ -13,6 +13,9 @@ const HistoricoMedico = () => {
   const [prescricoes, setPrescricoes] = useState([]);
   const [exames, setExames] = useState([]);
 
+  const [contagemPrescricoes, setContagemPrescricoes] = useState(0);
+  const [contagemExames, setContagemExames] = useState(0);
+
   const [loadingPrescricoes, setLoadingPrescricoes] = useState(false);
   const [loadingExames, setLoadingExames] = useState(false);
 
@@ -68,10 +71,12 @@ const HistoricoMedico = () => {
 
   const carregarHistorico = async (idPaciente) => {
     try {
-      // Carregar consultas
-      await carregarConsultas(idPaciente);
-      
-      // Prescrições e exames serão carregados quando o usuário clicar nas abas
+      // Carregar tudo no início
+      await Promise.all([
+        carregarConsultas(idPaciente),
+        carregarPrescricoes(idPaciente),
+        carregarExames(idPaciente)
+      ]);
     } catch (err) {
       console.error('Erro ao carregar histórico:', err);
       setError('Erro ao carregar histórico médico');
@@ -99,51 +104,40 @@ const HistoricoMedico = () => {
     }
   };
 
-  const carregarPrescricoes = async () => {
-    if (!pacienteId || prescricoes.length > 0 || loadingPrescricoes) return;
-    
+  const carregarPrescricoes = async (idPaciente) => {
     try {
-      setLoadingPrescricoes(true);
-      const prescricoesRes = await api.get(`/prescricoes/paciente/${pacienteId}`);
+      const prescricoesRes = await api.get(`/prescricoes/paciente/${idPaciente}`);
       
       const prescricoesData = Array.isArray(prescricoesRes.data)
         ? prescricoesRes.data
         : prescricoesRes.data.prescricoes || [];
       
       setPrescricoes(prescricoesData);
+      setContagemPrescricoes(prescricoesData.length);
     } catch (err) {
       console.error('Erro ao carregar prescrições:', err);
-      if (err.response?.status === 404) {
-        setPrescricoes([]);
-      } else {
+      if (err.response?.status !== 404) {
         setError('Erro ao carregar prescrições');
       }
-    } finally {
-      setLoadingPrescricoes(false);
+      setPrescricoes([]);
+      setContagemPrescricoes(0);
     }
   };
 
-  const carregarExames = async () => {
-    if (!pacienteId || exames.length > 0 || loadingExames) return;
-    
+  const carregarExames = async (idPaciente) => {
     try {
-      setLoadingExames(true);
-      const examesRes = await api.get(`/exames/paciente/${pacienteId}`);
+      const examesRes = await api.get(`/exames/paciente/${idPaciente}`);
       
       const examesData = Array.isArray(examesRes.data)
         ? examesRes.data
         : examesRes.data.exames || [];
       
       setExames(examesData);
+      setContagemExames(examesData.length);
     } catch (err) {
       console.error('Erro ao carregar exames:', err);
-      if (err.response?.status === 404) {
-        setExames([]);
-      } else {
-        console.log('Endpoint de exames ainda não disponível');
-      }
-    } finally {
-      setLoadingExames(false);
+      setExames([]);
+      setContagemExames(0);
     }
   };
 
@@ -170,16 +164,18 @@ const HistoricoMedico = () => {
   };
 
   const handleTabSelect = (key) => {
-    if (key === 'prescricoes' && prescricoes.length === 0) {
-      carregarPrescricoes();
-    } else if (key === 'exames' && exames.length === 0) {
-      carregarExames();
-    }
+    // Agora não precisa mais carregar ao clicar, pois já está tudo carregado
   };
 
-  const recarregarPrescricoes = () => {
-    setPrescricoes([]);
-    carregarPrescricoes();
+  const recarregarPrescricoes = async () => {
+    if (!pacienteId) return;
+    
+    try {
+      setLoadingPrescricoes(true);
+      await carregarPrescricoes(pacienteId);
+    } finally {
+      setLoadingPrescricoes(false);
+    }
   };
 
   if (loading) {
@@ -301,16 +297,9 @@ const HistoricoMedico = () => {
                 </>
               }
             >
-              {loadingPrescricoes ? (
-                <div className="text-center py-5">
-                  <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Carregando...</span>
-                  </div>
-                  <p className="text-muted mt-3">Carregando prescrições...</p>
-                </div>
-              ) : prescricoes.length > 0 ? (
+              {prescricoes.length > 0 ? (
                 <>
-                  <div className="d-flex justify-content-end mb-3">
+                  {/* <div className="d-flex justify-content-end mb-3">
                     <Button 
                       variant="outline-primary" 
                       size="sm"
@@ -319,7 +308,7 @@ const HistoricoMedico = () => {
                       <i className="bi bi-arrow-clockwise me-1"></i>
                       Atualizar
                     </Button>
-                  </div>
+                  </div> */}
                   <div className="table-responsive">
                     <Table hover>
                       <thead>
@@ -328,19 +317,42 @@ const HistoricoMedico = () => {
                           <th>Médico</th>
                           <th>Medicamento</th>
                           <th>Dosagem</th>
+                          <th>Via</th>
                           <th>Frequência</th>
                           <th>Duração</th>
+                          <th>Observações</th>
                         </tr>
                       </thead>
                       <tbody>
                         {prescricoes.map((prescricao) => (
                           <tr key={prescricao.id}>
-                            <td>{formatarData(prescricao.data_prescricao || prescricao.created_at)}</td>
-                            <td>{prescricao.medico?.pessoa?.nome_completo || 'N/A'}</td>
-                            <td><strong>{prescricao.medicamento}</strong></td>
+                            <td>{formatarData(prescricao.data_prescricao || prescricao.createdAt)}</td>
+                            <td>
+                              <div>
+                                <strong>{prescricao.medico?.pessoa?.nome_completo || 'N/A'}</strong>
+                                <div className="small text-muted">
+                                  {prescricao.medico?.especialidade && (
+                                    <><i className="bi bi-award me-1"></i>{prescricao.medico.especialidade}</>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td><strong className="text-primary">{prescricao.medicamento}</strong></td>
                             <td>{prescricao.dosagem || '-'}</td>
+                            <td>
+                              <Badge bg="secondary" className="text-uppercase">
+                                {prescricao.via_administracao || '-'}
+                              </Badge>
+                            </td>
                             <td>{prescricao.frequencia || '-'}</td>
-                            <td>{prescricao.duracao || '-'}</td>
+                            <td>
+                              <Badge bg="info">
+                                {prescricao.duracao || '-'}
+                              </Badge>
+                            </td>
+                            <td className="small text-muted" style={{ maxWidth: '200px' }}>
+                              {prescricao.observacoes || '-'}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -365,38 +377,63 @@ const HistoricoMedico = () => {
                 </>
               }
             >
-              {loadingExames ? (
-                <div className="text-center py-5">
-                  <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Carregando...</span>
-                  </div>
-                  <p className="text-muted mt-3">Carregando exames...</p>
-                </div>
-              ) : exames.length > 0 ? (
+              {exames.length > 0 ? (
                 <div className="table-responsive">
                   <Table hover>
                     <thead>
                       <tr>
-                        <th>Data</th>
+                        <th>Data Solicitação</th>
                         <th>Tipo de Exame</th>
                         <th>Médico Solicitante</th>
                         <th>Status</th>
+                        <th>Data Realização</th>
                         <th>Resultado</th>
                       </tr>
                     </thead>
                     <tbody>
                       {exames.map((exame) => (
                         <tr key={exame.id}>
-                          <td>{formatarData(exame.data_solicitacao || exame.created_at)}</td>
-                          <td><strong>{exame.tipo || exame.nome}</strong></td>
-                          <td>{exame.medico?.pessoa?.nome_completo || 'N/A'}</td>
+                          <td>{formatarData(exame.data_solicitacao || exame.createdAt)}</td>
+                          <td><strong className="text-primary">{exame.tipo_exame || exame.tipo || exame.nome}</strong></td>
                           <td>
-                            <Badge bg={exame.status === 'CONCLUIDO' ? 'success' : 'warning'}>
+                            <div>
+                              <strong>{exame.medico_solicitante?.pessoa?.nome_completo || 'N/A'}</strong>
+                              <div className="small text-muted">
+                                {exame.medico_solicitante?.especialidade && (
+                                  <><i className="bi bi-award me-1"></i>{exame.medico_solicitante.especialidade}</>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <Badge bg={
+                              exame.status === 'REALIZADO' ? 'success' : 
+                              exame.status === 'AGENDADO' ? 'warning' : 
+                              exame.status === 'PENDENTE' ? 'secondary' :
+                              'info'
+                            }>
                               {exame.status}
                             </Badge>
                           </td>
                           <td>
-                            {exame.resultado_disponivel || exame.status === 'CONCLUIDO' ? (
+                            {exame.data_realizacao ? (
+                              formatarData(exame.data_realizacao)
+                            ) : (
+                              <span className="text-muted small">-</span>
+                            )}
+                          </td>
+                          <td>
+                            {exame.status === 'REALIZADO' && exame.resultado ? (
+                              <Button 
+                                size="sm" 
+                                variant="outline-success"
+                                onClick={() => alert(`Resultado:\n\n${exame.resultado}`)}
+                                title="Clique para ver o resultado completo"
+                              >
+                                <i className="bi bi-eye me-1"></i>
+                                Ver Resultado
+                              </Button>
+                            ) : exame.arquivo_resultado ? (
                               <Button 
                                 size="sm" 
                                 variant="outline-primary"
@@ -413,6 +450,24 @@ const HistoricoMedico = () => {
                       ))}
                     </tbody>
                   </Table>
+                  
+                  {/* Card com observações quando houver */}
+                  {exames.some(e => e.observacoes) && (
+                    <Card className="mt-3 border-info">
+                      <Card.Body>
+                        <h6 className="text-info mb-3">
+                          <i className="bi bi-info-circle me-2"></i>
+                          Observações dos Exames
+                        </h6>
+                        {exames.filter(e => e.observacoes).map((exame) => (
+                          <div key={exame.id} className="mb-2">
+                            <strong className="small">{exame.tipo_exame}:</strong>
+                            <span className="small text-muted ms-2">{exame.observacoes}</span>
+                          </div>
+                        ))}
+                      </Card.Body>
+                    </Card>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-5">

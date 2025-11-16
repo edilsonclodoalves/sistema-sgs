@@ -1,4 +1,4 @@
-const { Prescricao, Prontuario, Paciente, Medico, Usuario } = require('../models');
+const { Prescricao, Prontuario, Paciente, Medico, Usuario, Pessoa } = require('../models');
 const { Op } = require('sequelize');
 
 class PrescricaoController {
@@ -13,12 +13,26 @@ class PrescricaoController {
         {
           model: Paciente,
           as: 'paciente',
-          attributes: ['id', 'pessoa_id']
+          attributes: ['id', 'pessoa_id'],
+          include: [
+            {
+              model: Pessoa,
+              as: 'pessoa',
+              attributes: ['nome_completo', 'cpf']
+            }
+          ]
         },
         {
           model: Medico,
           as: 'medico',
-          attributes: ['id', 'crm', 'especialidade', 'pessoa_id']
+          attributes: ['id', 'crm', 'especialidade', 'pessoa_id'],
+          include: [
+            {
+              model: Pessoa,
+              as: 'pessoa',
+              attributes: ['nome_completo', 'cpf']
+            }
+          ]
         }
       ];
 
@@ -62,7 +76,7 @@ class PrescricaoController {
         include,
         limit: parseInt(limit),
         offset,
-        order: [['created_at', 'DESC']]
+        order: [['createdAt', 'DESC']]
       });
 
       return res.json({
@@ -90,12 +104,26 @@ class PrescricaoController {
           {
             model: Paciente,
             as: 'paciente',
-            attributes: ['id', 'pessoa_id', 'tipo_sanguineo', 'alergias']
+            attributes: ['id', 'pessoa_id', 'tipo_sanguineo', 'alergias'],
+            include: [
+              {
+                model: Pessoa,
+                as: 'pessoa',
+                attributes: ['nome_completo', 'cpf']
+              }
+            ]
           },
           {
             model: Medico,
             as: 'medico',
-            attributes: ['id', 'crm', 'especialidade', 'pessoa_id']
+            attributes: ['id', 'crm', 'especialidade', 'pessoa_id'],
+            include: [
+              {
+                model: Pessoa,
+                as: 'pessoa',
+                attributes: ['nome_completo', 'cpf']
+              }
+            ]
           }
         ]
       });
@@ -114,7 +142,7 @@ class PrescricaoController {
     }
   }
 
-  // Buscar prescrições por paciente
+  // Buscar prescrições por paciente - MÉTODO CORRIGIDO
   async prescricoesPaciente(req, res) {
     try {
       const { paciente_id } = req.params;
@@ -153,6 +181,7 @@ class PrescricaoController {
         });
       }
 
+      // CORREÇÃO PRINCIPAL: Incluir os dados da Pessoa do médico
       const prescricoes = await Prescricao.findAll({
         where: { paciente_id },
         include: [
@@ -164,10 +193,17 @@ class PrescricaoController {
           {
             model: Medico,
             as: 'medico',
-            attributes: ['id', 'crm', 'especialidade', 'pessoa_id']
+            attributes: ['id', 'crm', 'especialidade', 'pessoa_id'],
+            include: [
+              {
+                model: Pessoa,
+                as: 'pessoa',
+                attributes: ['nome_completo', 'cpf', 'email']
+              }
+            ]
           }
         ],
-        order: [['created_at', 'DESC']]
+        order: [['createdAt', 'DESC']]
       });
 
       return res.json({
@@ -195,7 +231,8 @@ class PrescricaoController {
         dosagem,
         frequencia,
         duracao,
-        observacoes
+        observacoes,
+        via_administracao
       } = req.body;
 
       // Validações obrigatórias
@@ -242,6 +279,7 @@ class PrescricaoController {
         medico_id,
         medicamento: medicamentoStr,
         dosagem,
+        via_administracao,
         frequencia,
         duracao,
         observacoes
@@ -252,12 +290,26 @@ class PrescricaoController {
           {
             model: Paciente,
             as: 'paciente',
-            attributes: ['id', 'pessoa_id']
+            attributes: ['id', 'pessoa_id'],
+            include: [
+              {
+                model: Pessoa,
+                as: 'pessoa',
+                attributes: ['nome_completo', 'cpf']
+              }
+            ]
           },
           {
             model: Medico,
             as: 'medico',
-            attributes: ['id', 'crm', 'especialidade', 'pessoa_id']
+            attributes: ['id', 'crm', 'especialidade', 'pessoa_id'],
+            include: [
+              {
+                model: Pessoa,
+                as: 'pessoa',
+                attributes: ['nome_completo', 'cpf']
+              }
+            ]
           }
         ]
       });
@@ -288,8 +340,8 @@ class PrescricaoController {
       delete dados.id;
       delete dados.paciente_id;
       delete dados.medico_id;
-      delete dados.created_at;
-      delete dados.updated_at;
+      delete dados.createdAt;
+      delete dados.updatedAt;
 
       // Converter medicamento para string se for array
       if (Array.isArray(dados.medicamento)) {
@@ -303,12 +355,26 @@ class PrescricaoController {
           {
             model: Paciente,
             as: 'paciente',
-            attributes: ['id', 'pessoa_id']
+            attributes: ['id', 'pessoa_id'],
+            include: [
+              {
+                model: Pessoa,
+                as: 'pessoa',
+                attributes: ['nome_completo', 'cpf']
+              }
+            ]
           },
           {
             model: Medico,
             as: 'medico',
-            attributes: ['id', 'crm', 'especialidade', 'pessoa_id']
+            attributes: ['id', 'crm', 'especialidade', 'pessoa_id'],
+            include: [
+              {
+                model: Pessoa,
+                as: 'pessoa',
+                attributes: ['nome_completo', 'cpf']
+              }
+            ]
           }
         ]
       });

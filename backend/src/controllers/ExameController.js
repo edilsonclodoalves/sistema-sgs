@@ -73,6 +73,94 @@ class ExameController {
   }
 
   /**
+   * Buscar exames por paciente
+   * GET /api/exames/paciente/:paciente_id
+   */
+  async examesPaciente(req, res) {
+    try {
+      const { paciente_id } = req.params;
+      const { userPerfil, userId } = req;
+
+      // Validar se o paciente_id foi fornecido
+      if (!paciente_id) {
+        return res.status(400).json({
+          error: 'Parâmetro obrigatório ausente',
+          message: 'É necessário especificar o ID do paciente na URL'
+        });
+      }
+
+      // Verificar se o paciente existe
+      const paciente = await Paciente.findByPk(paciente_id);
+      if (!paciente) {
+        return res.status(404).json({ 
+          error: 'Paciente não encontrado' 
+        });
+      }
+
+      // Controle de acesso baseado no perfil
+      if (userPerfil === 'PACIENTE') {
+        // Paciente só pode ver seus próprios exames
+        const pacienteLogado = await Paciente.findOne({ 
+          where: { pessoa_id: userId } 
+        });
+        
+        if (!pacienteLogado || pacienteLogado.id !== parseInt(paciente_id)) {
+          return res.status(403).json({
+            error: 'Acesso negado',
+            message: 'Você só pode visualizar seus próprios exames.'
+          });
+        }
+      } else if (userPerfil === 'MEDICO' || userPerfil === 'ADMINISTRADOR') {
+        // Médico e Admin podem ver exames de qualquer paciente
+      } else {
+        // Perfil não autorizado
+        return res.status(403).json({
+          error: 'Acesso negado',
+          message: `Perfil '${userPerfil}' não autorizado a visualizar exames.`
+        });
+      }
+
+      // Buscar exames do paciente
+      const exames = await Exame.findAll({
+        where: { paciente_id },
+        include: [
+          {
+            model: Paciente,
+            as: 'paciente',
+            attributes: ['id', 'pessoa_id']
+          },
+          {
+            model: Medico,
+            as: 'medico_solicitante',
+            attributes: ['id', 'crm', 'especialidade', 'pessoa_id'],
+            include: [
+              {
+                model: Pessoa,
+                as: 'pessoa',
+                attributes: ['nome_completo', 'cpf']
+              }
+            ]
+          }
+        ],
+        order: [['data_solicitacao', 'DESC']]
+      });
+
+      return res.json({
+        paciente_id,
+        total: exames.length,
+        exames
+      });
+
+    } catch (error) {
+      console.error('Erro ao buscar exames do paciente:', error);
+      return res.status(500).json({
+        error: 'Erro ao buscar exames do paciente',
+        message: error.message
+      });
+    }
+  }
+
+  /**
    * Buscar exame por ID
    * GET /api/exames/:id
    */

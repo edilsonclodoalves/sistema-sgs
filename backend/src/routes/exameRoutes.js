@@ -4,6 +4,13 @@ const ExameController = require('../controllers/ExameController');
 const { auth, authorize } = require('../middlewares/auth');
 
 /**
+ * @route GET /api/exames/paciente/:paciente_id
+ * @desc Listar exames por paciente
+ * @access Private
+ */
+router.get('/paciente/:paciente_id', auth, ExameController.examesPaciente);
+
+/**
  * @route GET /api/exame/tipos
  * @desc Listar tipos de exames
  * @access Private
