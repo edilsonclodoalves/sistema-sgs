@@ -154,7 +154,7 @@ const GerenciarPacientes = () => {
                           >
                             <i className="bi bi-pencil"></i>
                           </Button>
-                          <Button
+                          {/* <Button
                             variant="outline-success"
                             size="sm"
                             as={Link}
@@ -162,7 +162,7 @@ const GerenciarPacientes = () => {
                             title="Ver Histórico"
                           >
                             <i className="bi bi-file-medical"></i>
-                          </Button>
+                          </Button> */}
                           <Button
                             variant="outline-danger"
                             size="sm"

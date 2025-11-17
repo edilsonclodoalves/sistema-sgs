@@ -11,22 +11,31 @@ const EditarPaciente = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
+    // Dados da pessoa
     nome_completo: '',
     cpf: '',
     data_nascimento: '',
     sexo: '',
-    telefone: '',
     email: '',
-    endereco: {
-      cep: '',
-      logradouro: '',
-      numero: '',
-      complemento: '',
-      bairro: '',
-      cidade: '',
-      estado: '',
-    },
+    telefone: '',
+    celular: '',
+    cep: '',
+    logradouro: '',
+    numero: '',
+    complemento: '',
+    bairro: '',
+    cidade: '',
+    estado: '',
+    // Dados do paciente
+    cartao_sus: '',
+    tipo_sanguineo: '',
+    alergias: '',
+    medicamentos_uso: '',
+    observacoes: '',
+    convenio: '',
+    numero_carteirinha: ''
   });
+  const [originalData, setOriginalData] = useState(null);
 
   useEffect(() => {
     const fetchPaciente = async () => {
@@ -35,61 +44,40 @@ const EditarPaciente = () => {
         console.log('📊 Resposta completa da API:', response);
         console.log('📊 response.data:', response.data);
         
-        // Trata diferentes estruturas de resposta possíveis
-        let dadosPaciente;
-        
-        if (response.data.paciente) {
-          // Estrutura: { paciente: {...} }
-          dadosPaciente = response.data.paciente;
-        } else if (response.data.pessoa) {
-          // Estrutura com pessoa aninhada: { pessoa: {...}, id, ... }
-          dadosPaciente = {
-            ...response.data,
-            nome_completo: response.data.pessoa.nome_completo,
-            cpf: response.data.pessoa.cpf,
-            sexo: response.data.pessoa.sexo,
-            telefone: response.data.pessoa.telefone,
-            email: response.data.pessoa.email,
-            cep: response.data.pessoa.cep,
-            logradouro: response.data.pessoa.logradouro,
-            numero: response.data.pessoa.numero,
-            complemento: response.data.pessoa.complemento,
-            bairro: response.data.pessoa.bairro,
-            cidade: response.data.pessoa.cidade,
-            estado: response.data.pessoa.estado,
-          };
-        } else {
-          // Estrutura direta: { id, nome_completo, cpf, ... }
-          dadosPaciente = response.data;
-        }
-        
-        console.log('📊 Dados processados:', dadosPaciente);
+        // Normalize response and extract pessoa + paciente fields
+        const payload = response.data.paciente ? response.data.paciente : response.data;
+        const pessoa = payload.pessoa || response.data.pessoa || {};
 
-        // Formata a data de nascimento para o formato YYYY-MM-DD
-        const dataNascimentoFormatada = dadosPaciente.data_nascimento 
-          ? new Date(dadosPaciente.data_nascimento).toISOString().split('T')[0] 
+        const dataNascimentoFormatada = (pessoa.data_nascimento || payload.data_nascimento)
+          ? new Date(pessoa.data_nascimento || payload.data_nascimento).toISOString().split('T')[0]
           : '';
 
         const formDataToSet = {
-          nome_completo: dadosPaciente.nome_completo || '',
-          cpf: dadosPaciente.cpf || '',
+          nome_completo: pessoa.nome_completo || payload.nome_completo || '',
+          cpf: pessoa.cpf || payload.cpf || '',
           data_nascimento: dataNascimentoFormatada,
-          sexo: dadosPaciente.sexo || '',
-          telefone: dadosPaciente.telefone || '',
-          email: dadosPaciente.email || '',
-          endereco: {
-            cep: dadosPaciente.cep || '',
-            logradouro: dadosPaciente.logradouro || '',
-            numero: dadosPaciente.numero || '',
-            complemento: dadosPaciente.complemento || '',
-            bairro: dadosPaciente.bairro || '',
-            cidade: dadosPaciente.cidade || '',
-            estado: dadosPaciente.estado || '',
-          },
+          sexo: pessoa.sexo || payload.sexo || '',
+          telefone: pessoa.telefone || pessoa.celular || payload.telefone || '',
+          email: pessoa.email || payload.email || '',
+          celular: pessoa.celular || payload.celular || '',
+          cep: pessoa.cep || payload.cep || '',
+          logradouro: pessoa.logradouro || payload.logradouro || '',
+          numero: pessoa.numero || payload.numero || '',
+          complemento: pessoa.complemento || payload.complemento || '',
+          bairro: pessoa.bairro || payload.bairro || '',
+          cidade: pessoa.cidade || payload.cidade || '',
+          estado: pessoa.estado || payload.estado || '',
+          cartao_sus: payload.cartao_sus || '',
+          tipo_sanguineo: payload.tipo_sanguineo || '',
+          alergias: payload.alergias || '',
+          medicamentos_uso: payload.medicamentos_uso || '',
+          observacoes: payload.observacoes || '',
+          convenio: payload.convenio || '',
+          numero_carteirinha: payload.numero_carteirinha || ''
         };
-        
-        console.log('📊 FormData que será setado:', formDataToSet);
+
         setFormData(formDataToSet);
+        setOriginalData(formDataToSet);
         setLoading(false);
       } catch (err) {
         console.error('❌ Erro ao buscar paciente:', err);
@@ -104,21 +92,7 @@ const EditarPaciente = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name.startsWith('endereco.')) {
-      const field = name.split('.')[1];
-      setFormData(prev => ({
-        ...prev,
-        endereco: {
-          ...prev.endereco,
-          [field]: value
-        }
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -127,17 +101,55 @@ const EditarPaciente = () => {
     setSubmitting(true);
 
     try {
-      const dataToSend = {
-        nome_completo: formData.nome_completo,
-        cpf: formData.cpf,
-        data_nascimento: formData.data_nascimento,
-        sexo: formData.sexo,
-        telefone: formData.telefone,
-        email: formData.email,
-        endereco: formData.endereco,
-      };
+      if (!originalData) {
+        throw new Error('Dados originais não carregados');
+      }
 
-      await api.put(`/pacientes/${id}`, dataToSend);
+      // Campos pertencentes à Pessoa vs Paciente
+      const pessoaFields = [
+        'cpf','nome_completo','data_nascimento','sexo','email','telefone','celular','cep','logradouro','numero','complemento','bairro','cidade','estado'
+      ];
+      const pacienteFields = [
+        'cartao_sus','tipo_sanguineo','alergias','medicamentos_uso','observacoes','convenio','numero_carteirinha'
+      ];
+
+      const payload = {};
+      const pessoaPayload = {};
+      const pacientePayload = {};
+
+      // compare pessoa fields
+      pessoaFields.forEach(field => {
+        const current = (field === 'cpf') ? formData[field].replace(/\D/g, '') : formData[field];
+        const original = (originalData[field] === undefined || originalData[field] === null) ? '' : originalData[field];
+        const origNormalized = (field === 'cpf') ? (original + '') : original;
+        if ((current || '') !== (origNormalized || '')) {
+          pessoaPayload[field] = current || null;
+        }
+      });
+
+      // compare paciente fields
+      pacienteFields.forEach(field => {
+        const current = formData[field];
+        const original = originalData[field];
+        if ((current || '') !== (original || '')) {
+          pacientePayload[field] = current === '' ? null : current;
+        }
+      });
+
+      if (Object.keys(pessoaPayload).length > 0) {
+        payload.pessoa = pessoaPayload;
+      }
+      if (Object.keys(pacientePayload).length > 0) {
+        Object.assign(payload, pacientePayload);
+      }
+
+      if (Object.keys(payload).length === 0) {
+        toast.info('Nenhuma alteração detectada');
+        setSubmitting(false);
+        return;
+      }
+
+      await api.put(`/pacientes/${id}`, payload);
       
       toast.success('Paciente atualizado com sucesso!');
       navigate('/admin/pacientes');
@@ -206,7 +218,7 @@ const EditarPaciente = () => {
                     type="text"
                     name="cpf"
                     value={formData.cpf}
-                    onChange={handleChange}
+                    readOnly
                     required
                     maxLength={11}
                   />
@@ -219,7 +231,7 @@ const EditarPaciente = () => {
                     type="date"
                     name="data_nascimento"
                     value={formData.data_nascimento}
-                    onChange={handleChange}
+                    readOnly
                     required
                   />
                 </Form.Group>
@@ -252,6 +264,29 @@ const EditarPaciente = () => {
                   />
                 </Form.Group>
               </Col>
+              <Col md={3} className="mb-3">
+                <Form.Group>
+                  <Form.Label>Celular *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="celular"
+                    value={formData.celular}
+                    onChange={handleChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={4} className="mb-3">
+                <Form.Group>
+                  <Form.Label>Cartão SUS</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="cartao_sus"
+                    value={formData.cartao_sus}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+              </Col>
               <Col md={6} className="mb-3">
                 <Form.Group>
                   <Form.Label>Email *</Form.Label>
@@ -278,8 +313,8 @@ const EditarPaciente = () => {
                   <Form.Label>CEP</Form.Label>
                   <Form.Control
                     type="text"
-                    name="endereco.cep"
-                    value={formData.endereco.cep || ''}
+                    name="cep"
+                    value={formData.cep || ''}
                     onChange={handleChange}
                   />
                 </Form.Group>
@@ -289,8 +324,8 @@ const EditarPaciente = () => {
                   <Form.Label>Logradouro</Form.Label>
                   <Form.Control
                     type="text"
-                    name="endereco.logradouro"
-                    value={formData.endereco.logradouro || ''}
+                    name="logradouro"
+                    value={formData.logradouro || ''}
                     onChange={handleChange}
                   />
                 </Form.Group>
@@ -300,8 +335,8 @@ const EditarPaciente = () => {
                   <Form.Label>Número</Form.Label>
                   <Form.Control
                     type="text"
-                    name="endereco.numero"
-                    value={formData.endereco.numero || ''}
+                    name="numero"
+                    value={formData.numero || ''}
                     onChange={handleChange}
                   />
                 </Form.Group>
@@ -311,8 +346,8 @@ const EditarPaciente = () => {
                   <Form.Label>Complemento</Form.Label>
                   <Form.Control
                     type="text"
-                    name="endereco.complemento"
-                    value={formData.endereco.complemento || ''}
+                    name="complemento"
+                    value={formData.complemento || ''}
                     onChange={handleChange}
                   />
                 </Form.Group>
@@ -322,8 +357,8 @@ const EditarPaciente = () => {
                   <Form.Label>Bairro</Form.Label>
                   <Form.Control
                     type="text"
-                    name="endereco.bairro"
-                    value={formData.endereco.bairro || ''}
+                    name="bairro"
+                    value={formData.bairro || ''}
                     onChange={handleChange}
                   />
                 </Form.Group>
@@ -333,8 +368,8 @@ const EditarPaciente = () => {
                   <Form.Label>Cidade</Form.Label>
                   <Form.Control
                     type="text"
-                    name="endereco.cidade"
-                    value={formData.endereco.cidade || ''}
+                    name="cidade"
+                    value={formData.cidade || ''}
                     onChange={handleChange}
                   />
                 </Form.Group>
@@ -344,9 +379,105 @@ const EditarPaciente = () => {
                   <Form.Label>Estado</Form.Label>
                   <Form.Control
                     type="text"
-                    name="endereco.estado"
-                    value={formData.endereco.estado || ''}
+                    name="estado"
+                    value={formData.estado || ''}
                     onChange={handleChange}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <h5 className="mb-3 mt-4">
+              <i className="bi bi-heart-pulse me-2"></i>
+              Informações de Saúde
+            </h5>
+
+            <Row>
+              <Col md={3} className="mb-3">
+                <Form.Group>
+                  <Form.Label>Tipo Sanguíneo</Form.Label>
+                  <Form.Select
+                    name="tipo_sanguineo"
+                    value={formData.tipo_sanguineo}
+                    onChange={handleChange}
+                  >
+                    <option value="">Selecione...</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+
+              <Col md={9} className="mb-3">
+                <Form.Group>
+                  <Form.Label>Alergias</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={2}
+                    name="alergias"
+                    value={formData.alergias}
+                    onChange={handleChange}
+                    placeholder="Descreva alergias conhecidas"
+                  />
+                </Form.Group>
+              </Col>
+
+              <Col md={6} className="mb-3">
+                <Form.Group>
+                  <Form.Label>Medicamentos em uso</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={2}
+                    name="medicamentos_uso"
+                    value={formData.medicamentos_uso}
+                    onChange={handleChange}
+                    placeholder="Lista de medicamentos ou remédios contínuos"
+                  />
+                </Form.Group>
+              </Col>
+
+              <Col md={6} className="mb-3">
+                <Form.Group>
+                  <Form.Label>Observações</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={2}
+                    name="observacoes"
+                    value={formData.observacoes}
+                    onChange={handleChange}
+                    placeholder="Observações clínicas relevantes"
+                  />
+                </Form.Group>
+              </Col>
+
+              <Col md={4} className="mb-3">
+                <Form.Group>
+                  <Form.Label>Convênio</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="convenio"
+                    value={formData.convenio}
+                    onChange={handleChange}
+                    placeholder="Nome do convênio (se houver)"
+                  />
+                </Form.Group>
+              </Col>
+
+              <Col md={4} className="mb-3">
+                <Form.Group>
+                  <Form.Label>Nº Carteirinha</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="numero_carteirinha"
+                    value={formData.numero_carteirinha}
+                    onChange={handleChange}
+                    placeholder="Número da carteirinha"
                   />
                 </Form.Group>
               </Col>
