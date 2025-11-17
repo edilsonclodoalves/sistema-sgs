@@ -55,7 +55,6 @@ sistema-saude-frontend/
 │   ├── pages/
 │   │   ├── Home.js                # Página inicial
 │   │   ├── Login.js               # Página de login
-│   │   ├── Cadastro.js            # Página de cadastro
 │   │   ├── AgendarConsulta.js     # UC01 - Agendamento
 │   │   ├── MinhasConsultas.js     # Lista de consultas
 │   │   ├── HistoricoMedico.js     # UC02 - Histórico

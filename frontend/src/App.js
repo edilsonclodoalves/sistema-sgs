@@ -27,7 +27,7 @@ import HistoricoMedico from './pages/HistoricoMedico';
 // Páginas do Administrador
 import AdminDashboard from './pages/AdminDashboard';
 import GerenciarPacientes from './pages/GerenciarPacientes';
-import CadastrarPaciente from './pages/Cadastro';
+import CadastrarPaciente from './pages/CadastrarPaciente';
 import EditarPaciente from './pages/EditarPaciente';
 import GerenciarConsultas from './pages/GerenciarConsultas';
 import AgendarConsultaAdmin from './pages/AgendarConsultaAdmin';

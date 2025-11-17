@@ -345,23 +345,56 @@ class PacienteController {
   async historico(req, res) {
     try {
       const { id } = req.params;
+      const { permanente } = req.query;
 
-      const paciente = await Paciente.findByPk(id);
+      const paciente = await Paciente.findByPk(id, {
+        include: [{ model: Pessoa, as: 'pessoa' }]
+      });
+
       if (!paciente) {
         return res.status(404).json({
-          error: 'Paciente não encontrado'
+          error: 'Paciente não encontrado',
+          message: 'Não existe paciente com este ID'
         });
       }
 
-      const consultas = await Consulta.findAll({
-        where: { paciente_id: id },
-        include: [
-          {
-            model: Prontuario,
-            as: 'prontuario'
-          }
-        ],
-        order: [['data_hora', 'DESC']]
+      // Se pediu exclusão permanente, executar remoção completa (apenas ADMIN)
+      if (permanente === 'true') {
+        if (req.userPerfil !== 'ADMINISTRADOR') {
+          return res.status(403).json({
+            error: 'Acesso negado',
+            message: 'Apenas administradores podem excluir registros permanentemente'
+          });
+        }
+
+        const transaction = await Paciente.sequelize.transaction();
+        try {
+          // Remover dados relacionados primeiro
+          await Consulta.destroy({ where: { paciente_id: paciente.id }, transaction });
+          await Exame.destroy({ where: { paciente_id: paciente.id }, transaction });
+          await Prontuario.destroy({ where: { paciente_id: paciente.id }, transaction });
+
+          // Remover usuário, paciente e pessoa
+          await Usuario.destroy({ where: { pessoa_id: paciente.pessoa.id }, transaction });
+          await Paciente.destroy({ where: { id: paciente.id }, transaction });
+          await Pessoa.destroy({ where: { id: paciente.pessoa.id }, transaction });
+
+          await transaction.commit();
+
+          return res.json({
+            message: 'Paciente excluído permanentemente'
+          });
+        } catch (err) {
+          await transaction.rollback();
+          throw err;
+        }
+      }
+
+      // Desativar ao invés de deletar (comportamento padrão)
+      await paciente.pessoa.update({ ativo: false });
+
+      return res.json({
+        message: 'Paciente desativado com sucesso'
       });
 
       const exames = await Exame.findAll({

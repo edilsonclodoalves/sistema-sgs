@@ -10,6 +10,9 @@ const GerenciarPacientes = () => {
   const [busca, setBusca] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [pacienteSelecionado, setPacienteSelecionado] = useState(null);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [pacienteParaExcluir, setPacienteParaExcluir] = useState(null);
+  const [exclusaoPermanente, setExclusaoPermanente] = useState(false);
 
   useEffect(() => {
     carregarPacientes();
@@ -33,6 +36,27 @@ const GerenciarPacientes = () => {
     setShowModal(true);
   };
 
+  const handleSolicitarExclusao = (paciente) => {
+    setPacienteParaExcluir(paciente);
+    setExclusaoPermanente(false);
+    setShowConfirmDelete(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!pacienteParaExcluir) return;
+    try {
+      const query = exclusaoPermanente ? '?permanente=true' : '';
+      await api.delete(`/pacientes/${pacienteParaExcluir.id}${query}`);
+      toast.success(exclusaoPermanente ? 'Paciente excluído permanentemente' : 'Paciente desativado com sucesso');
+      setShowConfirmDelete(false);
+      setPacienteParaExcluir(null);
+      carregarPacientes();
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || 'Erro ao desativar paciente');
+    }
+  };
+
   const pacientesFiltrados = pacientes.filter(p => {
     const termo = busca.toLowerCase();
     return (
@@ -54,7 +78,7 @@ const GerenciarPacientes = () => {
             Total: {pacientes.length} paciente(s) cadastrado(s)
           </p>
         </div>
-        <Link to="/admin/pacientes/novo" className="btn btn-primary">
+	        <Link to="/admin/pacientes/novo" className="btn btn-primary">
           <i className="bi bi-plus-lg me-2"></i>
           Cadastrar Paciente
         </Link>
@@ -91,9 +115,9 @@ const GerenciarPacientes = () => {
                   <tr>
                     <th>ID</th>
                     <th>Nome Completo</th>
-                    <th>CPF</th>
-                    <th>Cartão SUS</th>
-                    <th>Telefone</th>
+	                    <th>CPF</th>
+	                    <th>Cartão SUS</th>
+	                    <th>Telefone</th>
                     <th>Status</th>
                     <th>Ações</th>
                   </tr>
@@ -138,6 +162,14 @@ const GerenciarPacientes = () => {
                             title="Ver Histórico"
                           >
                             <i className="bi bi-file-medical"></i>
+                          </Button>
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            onClick={() => handleSolicitarExclusao(paciente)}
+                            title="Desativar"
+                          >
+                            <i className="bi bi-trash"></i>
                           </Button>
                         </div>
                       </td>
@@ -214,6 +246,39 @@ const GerenciarPacientes = () => {
           >
             <i className="bi bi-pencil me-2"></i>
             Editar Paciente
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      
+      {/* Modal de confirmação de exclusão */}
+      <Modal show={showConfirmDelete} onHide={() => setShowConfirmDelete(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirmar exclusão</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {pacienteParaExcluir ? (
+            <>
+              <p>Tem certeza que deseja desativar o paciente <strong>{pacienteParaExcluir.pessoa?.nome_completo}</strong>? Essa ação apenas desativa o cadastro.</p>
+              <Form.Group className="mt-3" controlId="permanenteCheck">
+                <Form.Check
+                  type="checkbox"
+                  label="Excluir permanentemente (remover todos os dados)"
+                  checked={exclusaoPermanente}
+                  onChange={(e) => setExclusaoPermanente(e.target.checked)}
+                />
+                <Form.Text className="text-muted">
+                  Marque esta opção para remover totalmente o registro do paciente e dados relacionados. Ação irreversível.
+                </Form.Text>
+              </Form.Group>
+            </>
+          ) : (
+            <p>Paciente não selecionado.</p>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowConfirmDelete(false)}>Cancelar</Button>
+          <Button variant={exclusaoPermanente ? "danger" : "warning"} onClick={handleConfirmDelete}>
+            {exclusaoPermanente ? 'Excluir permanentemente' : 'Desativar'}
           </Button>
         </Modal.Footer>
       </Modal>
