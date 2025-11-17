@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Card, Table, Button, Alert, Form, Row, Col } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import api from '../services/api';
 
@@ -10,6 +12,7 @@ const GerenciarConsultas = () => {
   const [filtroStatus, setFiltroStatus] = useState('');
   const [filtroMedico, setFiltroMedico] = useState('');
   const [medicos, setMedicos] = useState([]);
+  const { user, isAdmin, isMedico, getMedicoId } = useAuth();
 
   useEffect(() => {
     fetchConsultas();
@@ -19,7 +22,8 @@ const GerenciarConsultas = () => {
   const fetchMedicos = async () => {
     try {
       const response = await api.get('/medicos');
-      setMedicos(response.data || []);
+      // API returns { medicos, pagination }
+      setMedicos(response.data?.medicos || []);
     } catch (err) {
       console.error('Erro ao carregar médicos:', err);
     }
@@ -31,7 +35,8 @@ const GerenciarConsultas = () => {
     try {
       const response = await api.get('/consultas');
       // O backend retorna todas as consultas, vamos filtrar no frontend por enquanto
-      setConsultas(response.data || []);
+      // API returns { consultas, pagination }
+      setConsultas(response.data?.consultas || []);
     } catch (err) {
       console.error('Erro ao carregar consultas:', err);
       setError('Não foi possível carregar a lista de consultas.');
@@ -51,6 +56,19 @@ const GerenciarConsultas = () => {
       fetchConsultas(); // Recarrega a lista
     } catch (err) {
       const message = err.response?.data?.message || 'Erro ao cancelar consulta';
+      toast.error(message);
+    }
+  };
+
+  const handleRealizarConsulta = async (id) => {
+    if (!window.confirm('Confirma marcar esta consulta como realizada?')) return;
+
+    try {
+      await api.put(`/consultas/${id}`, { status: 'REALIZADA' });
+      toast.success('Consulta marcada como realizada!');
+      fetchConsultas();
+    } catch (err) {
+      const message = err.response?.data?.message || 'Erro ao atualizar consulta';
       toast.error(message);
     }
   };
@@ -171,22 +189,59 @@ const GerenciarConsultas = () => {
                     <td>{consulta.paciente?.pessoa?.nome_completo || 'N/A'}</td>
                     <td>{consulta.medico?.pessoa?.nome_completo || 'N/A'}</td>
                     <td>{formatDateTime(consulta.data_hora)}</td>
-                    <td>{consulta.tipo_consulta}</td>
+                    <td>{consulta.medico?.especialidade || consulta.tipo_consulta || 'N/A'}</td>
                     <td>
                       <span className={`badge bg-${getStatusVariant(consulta.status)}`}>
                         {consulta.status}
                       </span>
                     </td>
                     <td>
-                      {consulta.status === 'AGENDADA' && (
+                      <div className="d-flex gap-2">
                         <Button
-                          variant="danger"
+                          variant="outline-primary"
                           size="sm"
-                          onClick={() => handleCancelarConsulta(consulta.id)}
+                          as={"a"}
+                          href={`/admin/consultas/${consulta.id}`}
                         >
-                          Cancelar
+                          <i className="bi bi-pencil"></i>
                         </Button>
-                      )}
+                        {consulta.status === 'AGENDADA' && (
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => handleCancelarConsulta(consulta.id)}
+                          >
+                            Cancelar
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          as={Link}
+                          to={`/admin/consultas/${consulta.id}`}
+                        >
+                          <i className="bi bi-pencil"></i>
+                        </Button>
+
+                        {consulta.status === 'AGENDADA' && (isAdmin() || (isMedico() && getMedicoId() === consulta.medico_id)) && (
+                          <>
+                            <Button
+                              variant="success"
+                              size="sm"
+                              onClick={() => handleRealizarConsulta(consulta.id)}
+                            >
+                              Realizar
+                            </Button>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              onClick={() => handleCancelarConsulta(consulta.id)}
+                            >
+                              Cancelar
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

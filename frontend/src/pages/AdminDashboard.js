@@ -48,8 +48,16 @@ const AdminDashboard = () => {
         consultasPendentes
       });
 
-      // Últimas 10 consultas
-      setConsultasRecentes(consultas.slice(0, 10));
+      // Últimas 10 consultas (mapear campos esperados pelo dashboard)
+      const recentes = (consultas.slice(0, 10) || []).map(c => ({
+        id: c.id,
+        paciente_nome: c.paciente?.pessoa?.nome_completo || c.paciente_nome || 'N/A',
+        especialidade: c.medico?.especialidade || c.especialidade || c.tipo_consulta || 'N/A',
+        data_hora: c.data_hora,
+        status: c.status
+      }));
+
+      setConsultasRecentes(recentes);
       
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
