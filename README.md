@@ -209,8 +209,8 @@ npm run dev
 ## **Testes**
 
 ```bash
-npm test
-npm test -- --coverage
+npm run test
+npm run test -- --coverage
 ```
 
 Relatório:  
